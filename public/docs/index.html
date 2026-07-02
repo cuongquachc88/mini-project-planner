@@ -1,0 +1,196 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Mini Project Planner — Features & Roadmap</title>
+  <!-- No external scripts: all styles are inlined to avoid CDN supply-chain risk -->
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Inter', system-ui, sans-serif; background: #0f172a; color: #e2e8f0; min-height: 100vh; line-height: 1.6; }
+    a { color: inherit; text-decoration: none; }
+    code { font-family: 'JetBrains Mono', monospace; background: #1e293b; padding: 1px 5px; border-radius: 4px; font-size: 0.85em; color: #a5b4fc; }
+    nav { background: #1e293b; border-bottom: 1px solid #334155; padding: 12px 24px; display: flex; align-items: center; gap: 24px; }
+    nav .brand { font-weight: 700; color: #818cf8; }
+    nav a.active { color: #fff; font-size: 14px; font-weight: 500; }
+    nav a.muted { color: #94a3b8; font-size: 14px; transition: color .15s; }
+    nav a.muted:hover { color: #fff; }
+    nav a.app-link { margin-left: auto; color: #818cf8; font-size: 14px; }
+    nav a.app-link:hover { color: #a5b4fc; }
+    main { max-width: 860px; margin: 0 auto; padding: 48px 24px; }
+    h1 { font-size: 2.2rem; font-weight: 800; color: #fff; margin-bottom: 8px; }
+    h2 { font-size: 1.2rem; font-weight: 600; color: #fff; margin-bottom: 16px; padding-bottom: 8px; border-bottom: 1px solid #334155; }
+    h3 { font-size: 1rem; font-weight: 600; color: #a5b4fc; margin-bottom: 12px; }
+    p.sub { color: #94a3b8; margin-bottom: 48px; }
+    section { margin-bottom: 48px; }
+    .grid3 { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px; }
+    .card { background: #1e293b; border: 1px solid #334155; border-radius: 10px; padding: 20px; }
+    .card .icon { font-size: 1.5rem; margin-bottom: 8px; }
+    .card h3 { color: #fff; font-size: 0.95rem; margin-bottom: 4px; }
+    .card p { color: #94a3b8; font-size: 13px; }
+    ol { padding-left: 0; list-style: none; display: flex; flex-direction: column; gap: 12px; }
+    ol li { display: flex; gap: 12px; font-size: 14px; color: #cbd5e1; }
+    .step-num { width: 24px; height: 24px; border-radius: 50%; background: #6366f1; color: #fff; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; flex-shrink: 0; }
+    table { width: 100%; font-size: 14px; border-collapse: collapse; }
+    td { padding: 8px 0; border-bottom: 1px solid #1e293b; vertical-align: middle; }
+    td:first-child { color: #cbd5e1; }
+    td:last-child { padding-left: 16px; width: 90px; }
+    .feature-group { margin-bottom: 32px; }
+    .badge { display: inline-flex; align-items: center; padding: 2px 10px; border-radius: 9999px; font-size: 11px; font-weight: 600; }
+    .shipped { background: #10b98133; color: #34d399; }
+    .planned { background: #6366f133; color: #a5b4fc; }
+    .wip { background: #f59e0b33; color: #fcd34d; }
+    .roadmap-card { background: #1e293b; border: 1px solid #334155; border-radius: 10px; padding: 20px; margin-bottom: 16px; }
+    .roadmap-card .title { display: flex; align-items: center; gap: 12px; margin-bottom: 12px; }
+    .roadmap-card .title span.name { color: #fff; font-weight: 600; }
+    .roadmap-card ul { list-style: disc; padding-left: 20px; display: flex; flex-direction: column; gap: 4px; font-size: 13px; color: #94a3b8; }
+    footer { border-top: 1px solid #1e293b; text-align: center; padding: 24px; font-size: 12px; color: #475569; }
+    footer a { color: #64748b; }
+    footer a:hover { color: #94a3b8; }
+  </style>
+</head>
+<body>
+
+  <nav>
+    <span class="brand">📋 Project Planner</span>
+    <a href="index.html" class="active">Features &amp; Roadmap</a>
+    <a href="sad.html" class="muted">Architecture (SAD)</a>
+    <a href="/" class="app-link">← Open App</a>
+  </nav>
+
+  <main>
+    <h1>Features &amp; Roadmap</h1>
+    <p class="sub">Mini Project Planner — offline-first, multi-project, PWA</p>
+
+    <section>
+      <h2>Overview</h2>
+      <div class="grid3">
+        <div class="card"><div class="icon">🎯</div><h3>Who it's for</h3><p>Solo devs or small teams who want full project management without SaaS lock-in or monthly fees.</p></div>
+        <div class="card"><div class="icon">📱</div><h3>Offline-first PWA</h3><p>Install on desktop or mobile. All data lives locally in PGlite. Works 100% without internet.</p></div>
+        <div class="card"><div class="icon">☁️</div><h3>Optional Drive Sync</h3><p>Back up to Google Drive on demand or every 15 minutes. One SQL file, no backend needed.</p></div>
+      </div>
+    </section>
+
+    <section>
+      <h2>Getting Started</h2>
+      <ol>
+        <li><span class="step-num">1</span><span>Open the app at <code>/</code> and click the install button in your browser address bar to install as a PWA.</span></li>
+        <li><span class="step-num">2</span><span>Visit <strong>Profile</strong> to set your name and email. You'll be set as the admin.</span></li>
+        <li><span class="step-num">3</span><span>Create your first project from the home screen. Pick a color and key (e.g. <code>PROJ</code>).</span></li>
+        <li><span class="step-num">4</span><span>Optionally connect Google Drive from the top bar to enable backup sync.</span></li>
+      </ol>
+    </section>
+
+    <section>
+      <h2>Feature List</h2>
+
+      <div class="feature-group">
+        <h3>🗂 Board &amp; Sprints</h3>
+        <table><tbody>
+          <tr><td>Kanban board with drag &amp; drop</td><td><span class="badge shipped">shipped</span></td></tr>
+          <tr><td>Custom stages per project</td><td><span class="badge shipped">shipped</span></td></tr>
+          <tr><td>Work item types: Story, Bug, Spike, Task, Action, Request</td><td><span class="badge shipped">shipped</span></td></tr>
+          <tr><td>Story points, priority, assignee, labels, due date</td><td><span class="badge shipped">shipped</span></td></tr>
+          <tr><td>Sprint lifecycle: plan → start → complete</td><td><span class="badge shipped">shipped</span></td></tr>
+          <tr><td>Backlog management with sprint assignment</td><td><span class="badge shipped">shipped</span></td></tr>
+          <tr><td>Rich item detail modal with comments</td><td><span class="badge planned">v1.1</span></td></tr>
+          <tr><td>Subtasks / parent items</td><td><span class="badge planned">v1.1</span></td></tr>
+        </tbody></table>
+      </div>
+
+      <div class="feature-group">
+        <h3>🏔 Epics &amp; Milestones</h3>
+        <table><tbody>
+          <tr><td>Epic creation with color coding</td><td><span class="badge shipped">shipped</span></td></tr>
+          <tr><td>Epic progress (items &amp; story points)</td><td><span class="badge shipped">shipped</span></td></tr>
+          <tr><td>Milestones with health indicator (green/amber/red)</td><td><span class="badge shipped">shipped</span></td></tr>
+          <tr><td>Epic timeline view</td><td><span class="badge planned">v1.1</span></td></tr>
+        </tbody></table>
+      </div>
+
+      <div class="feature-group">
+        <h3>📊 Reports &amp; Velocity</h3>
+        <table><tbody>
+          <tr><td>Sprint velocity bar chart (planned vs completed)</td><td><span class="badge shipped">shipped</span></td></tr>
+          <tr><td>3-sprint rolling velocity average</td><td><span class="badge shipped">shipped</span></td></tr>
+          <tr><td>Completion rate trend line</td><td><span class="badge shipped">shipped</span></td></tr>
+          <tr><td>Burndown chart per sprint</td><td><span class="badge planned">v1.1</span></td></tr>
+        </tbody></table>
+      </div>
+
+      <div class="feature-group">
+        <h3>🗄 Project Vault</h3>
+        <table><tbody>
+          <tr><td>Meeting notes (date, attendees, markdown body)</td><td><span class="badge shipped">shipped</span></td></tr>
+          <tr><td>Decision log (title, decision, rationale, date)</td><td><span class="badge shipped">shipped</span></td></tr>
+          <tr><td>Retrospectives (went well / improve / actions)</td><td><span class="badge shipped">shipped</span></td></tr>
+          <tr><td>Run sheets (ordered checklist with tick-off)</td><td><span class="badge shipped">shipped</span></td></tr>
+          <tr><td>Wiki (tree-structured markdown pages)</td><td><span class="badge shipped">shipped</span></td></tr>
+          <tr><td>Costs &amp; subscriptions tracker (monthly/annual)</td><td><span class="badge shipped">shipped</span></td></tr>
+        </tbody></table>
+      </div>
+
+      <div class="feature-group">
+        <h3>📤 Share &amp; Export</h3>
+        <table><tbody>
+          <tr><td>Export task as self-contained HTML</td><td><span class="badge planned">v1.1</span></td></tr>
+          <tr><td>Export sprint summary as HTML</td><td><span class="badge planned">v1.1</span></td></tr>
+          <tr><td>Export meeting note as HTML</td><td><span class="badge planned">v1.1</span></td></tr>
+        </tbody></table>
+      </div>
+
+      <div class="feature-group">
+        <h3>☁️ Sync &amp; PWA</h3>
+        <table><tbody>
+          <tr><td>PWA installable (desktop + mobile)</td><td><span class="badge shipped">shipped</span></td></tr>
+          <tr><td>Offline-first (works without internet)</td><td><span class="badge shipped">shipped</span></td></tr>
+          <tr><td>Google Drive backup sync (SQL dump)</td><td><span class="badge wip">v1.0</span></td></tr>
+          <tr><td>Auto-sync every 15 minutes when online</td><td><span class="badge wip">v1.0</span></td></tr>
+          <tr><td>Multi-device restore from Drive</td><td><span class="badge planned">v1.1</span></td></tr>
+        </tbody></table>
+      </div>
+    </section>
+
+    <section>
+      <h2>Roadmap</h2>
+      <div class="roadmap-card">
+        <div class="title"><span class="badge shipped">v1.0</span><span class="name">Foundation (Current)</span></div>
+        <ul>
+          <li>Multi-project support with project switcher</li>
+          <li>Kanban board, custom stages, work item types</li>
+          <li>Sprint planning and lifecycle</li>
+          <li>Epics, milestones with health tracking</li>
+          <li>Full Project Vault (6 sections)</li>
+          <li>Sprint velocity reports</li>
+          <li>PWA installability, offline-first</li>
+        </ul>
+      </div>
+      <div class="roadmap-card">
+        <div class="title"><span class="badge wip">v1.1</span><span class="name">Polish &amp; Export (Q3 2026)</span></div>
+        <ul>
+          <li>Rich item detail drawer with full comment thread</li>
+          <li>Burndown chart per sprint</li>
+          <li>HTML export for tasks, sprints, meeting notes</li>
+          <li>Epic timeline / Gantt view</li>
+          <li>Google Drive sync (OAuth + auto-sync)</li>
+          <li>Subtask / parent item support</li>
+        </ul>
+      </div>
+      <div class="roadmap-card">
+        <div class="title"><span class="badge planned">v2.0</span><span class="name">Team &amp; Collaboration (Q4 2026)</span></div>
+        <ul>
+          <li>Teammate invites and role-based access</li>
+          <li>Real-time sync option (optional backend)</li>
+          <li>AI-assisted retrospective summaries</li>
+          <li>Custom fields on work items</li>
+          <li>Calendar view for due dates and sprints</li>
+        </ul>
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    Mini Project Planner · <a href="sad.html">Architecture Document</a>
+  </footer>
+</body>
+</html>

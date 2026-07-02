@@ -1,0 +1,250 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Mini Project Planner — Software Architecture Document</title>
+  <!-- No external scripts or stylesheets: fully self-contained to avoid CDN supply-chain risk -->
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Inter', system-ui, sans-serif; background: #0f172a; color: #e2e8f0; min-height: 100vh; line-height: 1.7; }
+    a { color: #818cf8; text-decoration: none; }
+    a:hover { color: #a5b4fc; text-decoration: underline; }
+    code, pre { font-family: 'JetBrains Mono', 'Courier New', monospace; }
+    code { background: #1e293b; padding: 1px 6px; border-radius: 4px; font-size: 0.82em; color: #a5b4fc; border: 1px solid #334155; }
+    pre { background: #1e293b; border: 1px solid #334155; border-radius: 8px; padding: 16px; overflow-x: auto; font-size: 13px; color: #94a3b8; line-height: 1.6; margin: 0; }
+
+    nav { background: #1e293b; border-bottom: 1px solid #334155; padding: 12px 24px; display: flex; align-items: center; gap: 24px; }
+    nav .brand { font-weight: 700; color: #818cf8; white-space: nowrap; }
+    nav a.active { color: #fff; font-size: 14px; font-weight: 500; }
+    nav a.muted { color: #94a3b8; font-size: 14px; transition: color .15s; }
+    nav a.muted:hover { color: #fff; }
+    nav a.app-link { margin-left: auto; color: #818cf8; font-size: 14px; white-space: nowrap; }
+
+    .layout { display: flex; max-width: 1100px; margin: 0 auto; padding: 0 24px; }
+    .toc { width: 200px; shrink: 0; padding: 40px 16px 40px 0; position: sticky; top: 0; height: 100vh; overflow-y: auto; }
+    .toc h4 { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; color: #475569; margin-bottom: 12px; }
+    .toc ul { list-style: none; display: flex; flex-direction: column; gap: 2px; }
+    .toc li a { font-size: 13px; color: #64748b; display: block; padding: 4px 8px; border-radius: 4px; transition: color .15s, background .15s; }
+    .toc li a:hover { color: #e2e8f0; background: #1e293b; text-decoration: none; }
+
+    main { flex: 1; padding: 48px 0 48px 32px; border-left: 1px solid #1e293b; min-width: 0; }
+    h1 { font-size: 2rem; font-weight: 800; color: #fff; margin-bottom: 6px; }
+    .meta { color: #64748b; font-size: 13px; margin-bottom: 48px; }
+    h2 { font-size: 1.25rem; font-weight: 700; color: #fff; margin: 48px 0 16px; padding-bottom: 8px; border-bottom: 1px solid #1e293b; }
+    h3 { font-size: 1rem; font-weight: 600; color: #a5b4fc; margin: 24px 0 10px; }
+    p { color: #cbd5e1; font-size: 14px; margin-bottom: 12px; }
+    ul.bullets { list-style: disc; padding-left: 20px; display: flex; flex-direction: column; gap: 4px; font-size: 14px; color: #94a3b8; margin-bottom: 12px; }
+    ul.bullets li strong { color: #cbd5e1; }
+
+    table { width: 100%; border-collapse: collapse; font-size: 13px; margin-bottom: 20px; }
+    th { text-align: left; padding: 8px 12px; background: #1e293b; color: #94a3b8; font-weight: 600; font-size: 11px; text-transform: uppercase; letter-spacing: 0.05em; border-bottom: 1px solid #334155; }
+    td { padding: 10px 12px; border-bottom: 1px solid #1e293b; vertical-align: top; color: #cbd5e1; }
+    td:first-child { white-space: nowrap; font-weight: 500; color: #e2e8f0; }
+    tr:last-child td { border-bottom: none; }
+
+    .callout { background: #1e293b; border-left: 3px solid #6366f1; border-radius: 0 8px 8px 0; padding: 14px 16px; margin-bottom: 16px; font-size: 13px; color: #94a3b8; }
+    .callout strong { color: #a5b4fc; }
+
+    .change-table td:first-child { font-family: 'JetBrains Mono', monospace; font-size: 12px; color: #818cf8; }
+    .change-table td:nth-child(2) { color: #64748b; font-size: 12px; white-space: nowrap; }
+
+    footer { border-top: 1px solid #1e293b; text-align: center; padding: 24px; font-size: 12px; color: #475569; }
+  </style>
+</head>
+<body>
+
+  <nav>
+    <span class="brand">📋 Project Planner</span>
+    <a href="index.html" class="muted">Features &amp; Roadmap</a>
+    <a href="sad.html" class="active">Architecture (SAD)</a>
+    <a href="/" class="app-link">← Open App</a>
+  </nav>
+
+  <div class="layout">
+    <aside class="toc">
+      <h4>Contents</h4>
+      <ul>
+        <li><a href="#overview">Overview</a></li>
+        <li><a href="#tech-decisions">Tech Decisions</a></li>
+        <li><a href="#data-model">Data Model</a></li>
+        <li><a href="#sync">Sync Strategy</a></li>
+        <li><a href="#roles">Roles &amp; Permissions</a></li>
+        <li><a href="#pwa">PWA Strategy</a></li>
+        <li><a href="#file-structure">File Structure</a></li>
+        <li><a href="#changelog">Change History</a></li>
+      </ul>
+    </aside>
+
+    <main>
+      <h1>Software Architecture Document</h1>
+      <p class="meta">Mini Project Planner · v1.0 · Last updated 2026-07-01</p>
+
+      <!-- Overview -->
+      <h2 id="overview">Architecture Overview</h2>
+      <p>Mini Project Planner is a fully client-side, offline-first Progressive Web App. There is no backend server. All persistent data lives in <strong>PGlite</strong> — a full PostgreSQL engine compiled to WebAssembly — running entirely in the browser and persisted to <code>IndexedDB</code>. Google Drive sync is an optional, voluntary operation; the app works completely without it.</p>
+
+      <div class="callout">
+        <strong>Core invariant:</strong> No data ever leaves the device without an explicit user action (Drive sync). The app must be 100% functional offline after initial load.
+      </div>
+
+      <h3>Architecture layers</h3>
+      <ul class="bullets">
+        <li><strong>UI:</strong> React 18 + TypeScript. Component tree rendered by React DOM.</li>
+        <li><strong>State:</strong> Zustand (UI-only — filters, drag state, modal open/close). No data cache in Zustand.</li>
+        <li><strong>Live data:</strong> <code>useLiveQuery</code> from <code>@electric-sql/pglite-react</code> — components re-render automatically when the DB rows they query change. Single source of truth.</li>
+        <li><strong>Database:</strong> PGlite via <code>IdbFs</code> (IndexedDB persistence). Full PostgreSQL dialect including joins, aggregates, CTEs.</li>
+        <li><strong>Routing:</strong> React Router v6 with nested layouts.</li>
+        <li><strong>Build:</strong> Vite 5. <code>@vitejs/plugin-react</code> for HMR. <code>vite-plugin-pwa</code> for service worker + manifest.</li>
+      </ul>
+
+      <!-- Tech Decisions -->
+      <h2 id="tech-decisions">Tech Decisions</h2>
+      <table>
+        <thead><tr><th>Decision</th><th>Choice</th><th>Rationale</th><th>Alternatives considered</th></tr></thead>
+        <tbody>
+          <tr><td>Local database</td><td>PGlite (PostgreSQL WASM)</td><td>Full SQL dialect, rich aggregates for velocity/progress queries, future-proof for sync with Supabase/Postgres backends</td><td>wa-sqlite (less rich), Dexie/IndexedDB (no SQL), SQLite WASM</td></tr>
+          <tr><td>Live queries</td><td>useLiveQuery (@electric-sql/pglite-react)</td><td>Components auto-update when DB changes — no manual cache invalidation, no Zustand data duplication</td><td>SWR polling, manual useEffect + refetch, Zustand as cache</td></tr>
+          <tr><td>UI framework</td><td>React 18 + TypeScript</td><td>Largest ecosystem, best PGlite integration, widest dnd-kit/TipTap/Recharts support</td><td>Vue 3, SvelteKit, Solid</td></tr>
+          <tr><td>Drag &amp; drop</td><td>@dnd-kit/core + sortable</td><td>Headless, accessible, composable — works with React 18 concurrent mode. No canvas dependency.</td><td>react-beautiful-dnd (unmaintained), pragmatic-drag-and-drop</td></tr>
+          <tr><td>Rich text</td><td>TipTap (ProseMirror)</td><td>Full JSON document model (needed for Wiki tree + Run Sheet tasks), extensible, outputs HTML for export</td><td>react-md-editor (markdown-only), Quill, Slate</td></tr>
+          <tr><td>Charts</td><td>Recharts</td><td>React-native components (not canvas imperative API), composable with Tailwind, no D3 peer dependency to manage</td><td>Chart.js, visx, nivo</td></tr>
+          <tr><td>WASM isolation shim</td><td>coi-serviceworker</td><td>Injects COOP/COEP headers via service worker — no server config needed for static hosting on Netlify/Vercel/GitHub Pages</td><td>Server-side COOP/COEP headers (requires host support)</td></tr>
+          <tr><td>Styling</td><td>Tailwind CSS v3 + shadcn/ui</td><td>Utility-first, tree-shakeable, no runtime CSS-in-JS overhead. shadcn gives owned, customisable Radix components.</td><td>CSS Modules, styled-components, Mantine</td></tr>
+          <tr><td>State management</td><td>Zustand (UI state only)</td><td>Minimal API, no boilerplate, slice pattern keeps features isolated. Data lives in PGlite, not in the store.</td><td>Redux, Jotai, React Context</td></tr>
+          <tr><td>Google sync scope</td><td>drive.appdata</td><td>Files stored in the hidden AppData folder — invisible to user in Drive UI, inaccessible to other apps. Clean separation.</td><td>drive.file (user-visible), full drive scope (too broad)</td></tr>
+        </tbody>
+      </table>
+
+      <!-- Data Model -->
+      <h2 id="data-model">Data Model</h2>
+      <p>All PKs are client-generated <code>crypto.randomUUID()</code> text UUIDs. All tables include <code>project_id</code> as a foreign key — there is no cross-project data leakage.</p>
+
+      <h3>Core entity relationships (ASCII ER)</h3>
+      <pre>
+users
+  └─ project_members ─── projects
+                              ├─ custom_stages
+                              ├─ labels
+                              ├─ epics
+                              │    └─ work_items ──── work_item_labels
+                              ├─ milestones │              └─ labels
+                              ├─ sprints ───┘
+                              │              └─ comments
+                              └─ vault
+                                   ├─ meeting_notes
+                                   ├─ decisions
+                                   ├─ retrospectives
+                                   ├─ run_sheets ─── run_sheet_items
+                                   ├─ wiki_pages (self-referential tree)
+                                   └─ costs
+      </pre>
+
+      <h3>Key schema decisions</h3>
+      <ul class="bullets">
+        <li><strong>work_items.position</strong> — integer sort order within a stage column. Updated on every drag-end in a single transaction.</li>
+        <li><strong>custom_stages.is_done</strong> — boolean flag marking the terminal "done" stage. Used to compute epic/sprint completion without hardcoding stage names.</li>
+        <li><strong>wiki_pages.parent_id</strong> — self-referential FK enabling arbitrarily deep page trees. Null = root page.</li>
+        <li><strong>app_meta table</strong> — key/value store for <code>schema_version</code>, <code>active_user_id</code>, <code>last_drive_sync</code>, <code>drive_file_id</code>.</li>
+        <li><strong>Migrations</strong> run sequentially at startup, gated by <code>app_meta.schema_version</code>. Each migration is an idempotent SQL file using <code>CREATE TABLE IF NOT EXISTS</code>.</li>
+      </ul>
+
+      <!-- Sync Strategy -->
+      <h2 id="sync">Google Drive Sync Strategy</h2>
+      <h3>Auth flow</h3>
+      <p>OAuth2 PKCE — entirely in the browser, no backend. Scope: <code>https://www.googleapis.com/auth/drive.appdata</code>. Auth uses a popup (<code>window.open</code>) so the main window's COOP/COEP headers are never broken by a navigation. Token stored in <code>localStorage</code> (acceptable for a personal-device PWA with no shared sessions).</p>
+
+      <h3>Backup file</h3>
+      <p>A single file named <code>planner-backup.sql</code> in the Drive <strong>AppData</strong> folder. Contents: plain SQL INSERT statements generated by iterating all table rows. Uploaded via Drive REST API v3 multipart upload.</p>
+
+      <h3>Sync operations</h3>
+      <ul class="bullets">
+        <li><strong>Export:</strong> Iterate all tables → build INSERT SQL → <code>PUT</code> to Drive. Timestamp saved to <code>app_meta.last_drive_sync</code>.</li>
+        <li><strong>Import:</strong> Download SQL from Drive → <code>DELETE</code> all local rows (in FK-safe order) → <code>db.exec(sql)</code> → reload app state.</li>
+        <li><strong>Auto-sync:</strong> <code>setInterval</code> every 15 minutes when <code>navigator.onLine</code>. Triggered in <code>useGoogleDrive</code> hook on mount.</li>
+      </ul>
+
+      <h3>Conflict model (v1)</h3>
+      <div class="callout">
+        <strong>Last-write-wins.</strong> The <code>updatedTime</code> of the Drive file is compared with <code>app_meta.last_drive_sync</code>. If Drive is newer, user is prompted to import. If local is newer, export overwrites Drive. Two concurrent active sessions will lose one device's changes — acceptable for a solo/small-team tool. v2 will track per-row vector clocks.
+      </div>
+
+      <!-- Roles -->
+      <h2 id="roles">Roles &amp; Permissions</h2>
+      <p>There is no auth server. "Authentication" is identity — the current user is stored in <code>app_meta.active_user_id</code>. Role enforcement is application-layer only (appropriate for a local-data, personal-use tool).</p>
+
+      <table>
+        <thead><tr><th>Permission</th><th>Admin</th><th>Teammate</th></tr></thead>
+        <tbody>
+          <tr><td>project:create / archive</td><td>✓</td><td>✗</td></tr>
+          <tr><td>project:settings (stages, labels)</td><td>✓</td><td>✗</td></tr>
+          <tr><td>member:invite / remove</td><td>✓</td><td>✗</td></tr>
+          <tr><td>sprint:manage (create, start, complete)</td><td>✓</td><td>✗</td></tr>
+          <tr><td>workitem:create</td><td>✓</td><td>✓</td></tr>
+          <tr><td>workitem:delete</td><td>✓</td><td>✗</td></tr>
+          <tr><td>vault:write (notes, decisions, retros, wiki)</td><td>✓</td><td>✓</td></tr>
+          <tr><td>cost:manage</td><td>✓</td><td>✗</td></tr>
+          <tr><td>drive:sync</td><td>✓</td><td>✗</td></tr>
+        </tbody>
+      </table>
+
+      <p>The <code>can(user, permission)</code> helper in <code>src/types/roles.ts</code> is the single enforcement point. UI elements hidden via <code>usePermission()</code> hook.</p>
+
+      <!-- PWA -->
+      <h2 id="pwa">PWA Strategy</h2>
+      <h3>Cross-Origin Isolation (COOP/COEP)</h3>
+      <p>PGlite requires <code>SharedArrayBuffer</code>, which requires Cross-Origin Isolation. In dev, Vite serves COOP/COEP headers directly. In production (any static host), <code>coi-serviceworker.js</code> — loaded as the very first script in <code>index.html</code> — installs a service worker that patches these headers on every navigation response. This avoids needing host-level header configuration on Netlify, Vercel, or GitHub Pages.</p>
+
+      <h3>Service worker</h3>
+      <p>Generated by <code>vite-plugin-pwa</code> using Workbox. Strategy: <code>registerType: 'autoUpdate'</code> — the SW updates silently in the background and activates on next navigation. <code>navigateFallback: '/index.html'</code> for SPA routing. The <code>/docs/</code> path is excluded from the navigation fallback so static HTML docs are served directly.</p>
+
+      <h3>Manifest</h3>
+      <p><code>public/manifest.webmanifest</code> declares <code>display: standalone</code>, theme/background colors matching the dark UI, and 192px + 512px icons. The 512px icon has <code>purpose: "any maskable"</code> for Android adaptive icons.</p>
+
+      <!-- File Structure -->
+      <h2 id="file-structure">File Structure</h2>
+      <pre>
+src/
+├── types/          db.ts · domain.ts · roles.ts · vault.ts
+├── db/
+│   ├── client.ts   PGlite singleton, migration runner, SQL export/restore
+│   ├── migrations/ 001_initial_schema.sql · 002_vault_tables.sql · 003_costs_wiki.sql
+│   └── queries/    projects · workItems · sprints · epics · vault · users
+├── store/          Zustand slices: app · board · sprint · ui · sync
+├── hooks/          useDb · useProject · useSprint · usePermission · useGoogleDrive · usePWA
+├── lib/
+│   ├── googleDrive/ auth.ts · driveApi.ts · sync.ts
+│   ├── htmlExport/  exporter.ts + templates/
+│   └── utils/       dates.ts · points.ts · cn.ts
+├── pages/          Home · Profile · ProjectLayout · Board · Backlog · Epics · Reports · Vault · Settings
+├── components/     layout/ · ui/ · shared components
+└── modules/        board/ · sprint/ · epics/ · vault/{6 sections} · reports/
+
+public/
+├── coi-serviceworker.js   Cross-Origin Isolation shim
+├── manifest.webmanifest
+├── icons/          icon-192.png · icon-512.png
+└── docs/           index.html (features) · sad.html (this file)
+      </pre>
+
+      <!-- Changelog -->
+      <h2 id="changelog">Change History</h2>
+      <table class="change-table">
+        <thead><tr><th>Version</th><th>Date</th><th>Summary</th></tr></thead>
+        <tbody>
+          <tr>
+            <td>v1.0.0</td>
+            <td>2026-07-01</td>
+            <td>Initial release. Multi-project Kanban + Sprint board, Epics &amp; Milestones, Project Vault (6 sections: meeting notes, decisions, retros, run sheets, wiki, costs), velocity reports, PWA scaffold, offline-first PGlite DB, coi-serviceworker COOP/COEP shim, docs pages.</td>
+          </tr>
+        </tbody>
+      </table>
+      <p style="font-size:13px; color:#475569">Future entries will document schema migrations, breaking changes, and architectural shifts.</p>
+    </main>
+  </div>
+
+  <footer>
+    Mini Project Planner · <a href="index.html">Features &amp; Roadmap</a>
+  </footer>
+</body>
+</html>
