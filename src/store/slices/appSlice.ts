@@ -1,0 +1,15 @@
+import type { DbUser } from '@/types/db'
+
+export interface AppSlice {
+  currentUser: DbUser | null
+  isDbReady: boolean
+  setCurrentUser: (user: DbUser | null) => void
+  setDbReady: (ready: boolean) => void
+}
+
+export const createAppSlice = (set: (fn: (s: AppSlice) => Partial<AppSlice>) => void): AppSlice => ({
+  currentUser: null,
+  isDbReady: false,
+  setCurrentUser: (user) => set(() => ({ currentUser: user })),
+  setDbReady: (ready) => set(() => ({ isDbReady: ready })),
+})
