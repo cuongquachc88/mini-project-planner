@@ -1,7 +1,7 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Box, ArrowRight, User, Mail, Lock, Eye, EyeOff, ShieldCheck } from 'lucide-react'
-import { createUser, setAppMeta } from '@/db/queries/users'
+import { createUser, setAppMeta, getAppMeta } from '@/db/queries/users'
 import { hashPin } from '@/lib/utils/pin'
 import { useStore } from '@/store'
 import { Input } from '@/components/ui/Input'
@@ -11,7 +11,15 @@ type Step = 'identity' | 'pin'
 
 export default function Login() {
   const navigate = useNavigate()
-  const { setCurrentUser, unlock } = useStore()
+  const { setCurrentUser, unlock, currentUser } = useStore()
+
+  // If user already exists (has session), skip login entirely
+  useEffect(() => {
+    if (currentUser) { navigate('/ui', { replace: true }); return }
+    getAppMeta('active_user_id').then(uid => {
+      if (uid) navigate('/ui', { replace: true })
+    })
+  }, [currentUser, navigate])
 
   const [step, setStep] = useState<Step>('identity')
   const [name, setName] = useState('')
