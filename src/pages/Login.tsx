@@ -11,7 +11,7 @@ type Mode = 'loading' | 'unlock' | 'register-identity' | 'register-pin'
 
 export default function Login() {
   const navigate = useNavigate()
-  const { setCurrentUser, unlock, currentUser, sessionReady } = useStore()
+  const { setCurrentUser, currentUser, sessionReady } = useStore()
 
   const [mode, setMode] = useState<Mode>('loading')
   const [pinHash, setPinHash] = useState<string | null>(null)
@@ -33,11 +33,12 @@ export default function Login() {
 
   useEffect(() => {
     if (!sessionReady) return
-    // session already loaded by main.tsx — just read pin_hash
     if (currentUser) {
       getAppMeta('pin_hash').then(ph => {
-        setPinHash(ph)
-        setMode(ph ? 'unlock' : 'register-identity')
+        const validHash = ph && ph.length === 64 ? ph : null
+        setPinHash(validHash)
+        // User exists but pin was wiped (e.g. old logout) — skip identity, go straight to set-pin
+        setMode(validHash ? 'unlock' : 'register-pin')
       })
     } else {
       setMode('register-identity')
@@ -61,7 +62,7 @@ export default function Login() {
     if (next.every(d => d !== '')) {
       const ok = await verifyPin(next.join(''), pinHash!)
       if (ok) {
-        unlock()
+        sessionStorage.setItem('planner_unlocked', '1')
         navigate('/ui', { replace: true })
       } else {
         setShaking(true)
@@ -98,11 +99,18 @@ export default function Login() {
     if (newPin !== newPinConfirm) { setError('PINs do not match'); return }
     setLoading(true); setError('')
     try {
-      const user = await createUser({ name: name.trim(), email: email.trim(), role: 'admin' })
       const h = await hashPin(newPin)
+      // If user already exists (lost PIN), just update the PIN — don't re-create
+      if (currentUser) {
+        await setAppMeta('pin_hash', h)
+        sessionStorage.setItem('planner_unlocked', '1')
+        navigate('/ui', { replace: true })
+        return
+      }
+      const user = await createUser({ name: name.trim(), email: email.trim(), role: 'admin' })
       await Promise.all([setAppMeta('active_user_id', user.id), setAppMeta('pin_hash', h)])
       setCurrentUser(user)
-      unlock()
+      sessionStorage.setItem('planner_unlocked', '1')
       navigate('/ui', { replace: true })
     } catch (e) {
       setError(String(e))
@@ -144,19 +152,23 @@ export default function Login() {
         <p className="text-[13px] text-white/40 mt-1.5">Enter your PIN to continue</p>
       </div>
 
-      <div className={`flex justify-center gap-3 ${shaking ? 'animate-shake' : ''}`}>
+      <div className={`flex justify-center gap-3 ${shaking ? 'animate-shake' : ''}`} data-1p-ignore data-lpignore="true">
         {digits.map((d, i) => (
           <input
             key={i}
             ref={el => { inputsRef.current[i] = el }}
-            type="password"
+            type="text"
             inputMode="numeric"
+            autoComplete="off"
             maxLength={1}
-            value={d}
-            onChange={e => handlePinDigit(i, e.target.value)}
+            value={d ? '●' : ''}
+            onChange={e => {
+              const raw = e.target.value.replace('●', '').replace(/\D/g, '')
+              handlePinDigit(i, raw.slice(-1))
+            }}
             onKeyDown={e => handlePinKeyDown(i, e)}
             className={[
-              'w-14 h-14 text-center text-xl font-bold rounded-xl border-2 transition-all outline-none bg-white/[0.05] text-white',
+              'w-14 h-14 text-center text-2xl font-bold rounded-xl border-2 transition-all outline-none bg-white/[0.05] text-white caret-transparent',
               pinError ? 'border-red-500 bg-red-500/10' : d ? 'border-violet-500 bg-violet-500/10' : 'border-white/[0.12] focus:border-violet-500',
             ].join(' ')}
           />
@@ -208,23 +220,29 @@ export default function Login() {
     </>
   )
 
-  // ── New user step 2: set PIN ──────────────────────────
+  // ── New user step 2 / existing user PIN reset ────────
   return shell(
     <>
-      <div className="flex items-center justify-center gap-2 mb-8">
-        {[1, 2].map((n, i) => (
-          <div key={n} className="flex items-center gap-2">
-            <div className={`w-6 h-6 rounded-full flex items-center justify-center text-[11px] font-bold ${i === 1 ? 'bg-violet-600 text-white' : 'bg-violet-600/30 text-violet-400'}`}>{n}</div>
-            {i === 0 && <div className="w-8 h-px bg-violet-500/30" />}
-          </div>
-        ))}
-      </div>
+      {!currentUser && (
+        <div className="flex items-center justify-center gap-2 mb-8">
+          {[1, 2].map((n, i) => (
+            <div key={n} className="flex items-center gap-2">
+              <div className={`w-6 h-6 rounded-full flex items-center justify-center text-[11px] font-bold ${i === 1 ? 'bg-violet-600 text-white' : 'bg-violet-600/30 text-violet-400'}`}>{n}</div>
+              {i === 0 && <div className="w-8 h-px bg-violet-500/30" />}
+            </div>
+          ))}
+        </div>
+      )}
       <div className="mb-8 text-center">
         <div className="w-14 h-14 rounded-2xl bg-violet-500/10 border border-violet-500/20 flex items-center justify-center mx-auto mb-4">
           <Lock size={24} className="text-violet-400" strokeWidth={1.8} />
         </div>
-        <h1 className="text-[26px] font-bold text-white tracking-tight">Set your PIN</h1>
-        <p className="text-[13px] text-white/40 mt-2">Used to unlock on return visits</p>
+        <h1 className="text-[26px] font-bold text-white tracking-tight">
+          {currentUser ? 'Reset your PIN' : 'Set your PIN'}
+        </h1>
+        <p className="text-[13px] text-white/40 mt-2">
+          {currentUser ? `Welcome back, ${currentUser.name.split(' ')[0]} — set a new PIN` : 'Used to unlock on return visits'}
+        </p>
       </div>
       <form onSubmit={handleRegister} className="bg-[#111113] border border-white/[0.08] rounded-2xl p-6 shadow-2xl shadow-black/60 space-y-4">
         <div className="space-y-1">
@@ -253,10 +271,12 @@ export default function Login() {
         <Button type="submit" disabled={loading} className="w-full gap-2 mt-1">
           {loading ? 'Setting up…' : 'Get started'} {!loading && <ArrowRight size={14} />}
         </Button>
-        <button type="button" onClick={() => { setMode('register-identity'); setError('') }}
-          className="w-full text-center text-[12px] text-white/25 hover:text-white/50 transition-colors">
-          ← Back
-        </button>
+        {!currentUser && (
+          <button type="button" onClick={() => { setMode('register-identity'); setError('') }}
+            className="w-full text-center text-[12px] text-white/25 hover:text-white/50 transition-colors">
+            ← Back
+          </button>
+        )}
         <p className="text-center text-[11px] text-white/20 flex items-center justify-center gap-1">
           <ShieldCheck size={10} /> PIN is hashed locally, never sent anywhere
         </p>

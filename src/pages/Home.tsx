@@ -190,9 +190,14 @@ function Stat({ label, value, sub, icon: Icon, accent }: {
 export default function Home() {
   const navigate = useNavigate()
   const [searchParams] = useSearchParams()
-  const { currentUser, setCurrentUser, logout, sessionReady } = useStore()
+  const { currentUser, logout, sessionReady } = useStore()
   const [showNew, setShowNew] = useState(searchParams.get('new') === '1')
   const [showArchived, setShowArchived] = useState(false)
+
+  useEffect(() => {
+    if (sessionReady && !currentUser) navigate('/login', { replace: true })
+    if (sessionReady && currentUser && !sessionStorage.getItem('planner_unlocked')) navigate('/login', { replace: true })
+  }, [sessionReady, currentUser, navigate])
 
   const projectResult = useLiveQuery<DbProject>(`SELECT * FROM projects ORDER BY created_at DESC`)
   const all    = projectResult?.rows ?? []
@@ -218,9 +223,7 @@ export default function Home() {
   const globalPct = gs && gs.total_items > 0
     ? Math.round((gs.done_items / gs.total_items) * 100) : 0
 
-  useEffect(() => {
-    if (sessionReady && !currentUser) navigate('/login', { replace: true })
-  }, [sessionReady, currentUser, navigate])
+  if (sessionReady && (!currentUser || !sessionStorage.getItem('planner_unlocked'))) return null
 
   const greeting = currentUser
     ? `Good ${new Date().getHours() < 12 ? 'morning' : new Date().getHours() < 18 ? 'afternoon' : 'evening'}, ${currentUser.name.split(' ')[0]}`
@@ -245,7 +248,7 @@ export default function Home() {
               {currentUser?.name ?? 'Profile'}
             </button>
             <button
-              onClick={async () => { await logout(); navigate('/login') }}
+              onClick={() => { sessionStorage.removeItem('planner_unlocked'); logout(); navigate('/login') }}
               className="btn-ghost text-[12px] flex items-center gap-1.5 text-white/40 hover:text-red-400"
               title="Log out"
             >
