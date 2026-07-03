@@ -8,21 +8,21 @@ export async function waitForApp(page: Page) {
 
 /** Set up a fresh identity and return to the home page. */
 export async function setupIdentity(page: Page, name = 'Test User', email = 'test@example.com') {
-  // Navigate to root and wait for PGlite to boot
-  await page.goto('/')
+  // Navigate to /ui (the dashboard) and wait for PGlite to boot
+  await page.goto('/ui')
   await waitForApp(page)
 
-  // May be on /profile if no user in DB
-  const onProfile = page.url().includes('/profile')
-  const profileFormVisible = await page.locator('input[placeholder="Your name"]').isVisible({ timeout: 2000 }).catch(() => false)
+  // May be redirected to /login if no user in DB
+  const onLogin = page.url().includes('/login')
+  const loginFormVisible = await page.locator('input[placeholder="Your name"]').isVisible({ timeout: 2000 }).catch(() => false)
 
-  if (onProfile || profileFormVisible) {
+  if (onLogin || loginFormVisible) {
     await page.locator('input[placeholder="Your name"]').waitFor({ state: 'visible', timeout: 5000 })
     await page.locator('input[placeholder="Your name"]').fill(name)
     await page.locator('input[placeholder="you@example.com"]').fill(email)
     await page.getByRole('button', { name: /get started/i }).click()
-    // Wait for navigation to home
-    await page.waitForURL('/', { timeout: 10000 })
+    // Wait for navigation to /ui
+    await page.waitForURL('/ui', { timeout: 10000 })
     await page.waitForTimeout(1500) // let DB writes settle before next navigations
   }
 
@@ -32,7 +32,7 @@ export async function setupIdentity(page: Page, name = 'Test User', email = 'tes
 
 /** Create a project and navigate into it, returning the projectId from URL. */
 export async function createProject(page: Page, name = 'Test Project') {
-  await page.goto('/')
+  await page.goto('/ui')
   await waitForApp(page)
 
   // Wait for Home page header to appear

@@ -1,4 +1,5 @@
 import { createBrowserRouter } from 'react-router-dom'
+import Landing from '@/pages/Landing'
 import Home from '@/pages/Home'
 import Login from '@/pages/Login'
 import Profile from '@/pages/Profile'
@@ -13,7 +14,8 @@ import Settings from '@/pages/Settings'
 import NotFound from '@/pages/NotFound'
 
 export const router = createBrowserRouter([
-  { path: '/', element: <Home /> },
+  { path: '/', element: <Landing /> },
+  { path: '/ui', element: <Home /> },
   { path: '/login', element: <Login /> },
   { path: '/profile', element: <Profile /> },
   { path: '/oauth-callback', element: <OAuthCallback /> },

@@ -22,7 +22,7 @@ export default function Login() {
       const user = await createUser({ name: name.trim(), email: email.trim(), role: 'admin' })
       await setAppMeta('active_user_id', user.id)
       setCurrentUser(user)
-      navigate('/')
+      navigate('/ui')
     } catch (e) {
       setError(String(e))
     } finally {

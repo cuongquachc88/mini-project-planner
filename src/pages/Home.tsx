@@ -226,7 +226,7 @@ export default function Home() {
         const u = await getUserById(uid)
         if (u) { setCurrentUser(u); return }
       }
-      if (await getAppMeta('schema_version')) navigate('/login')
+      if (await getAppMeta('schema_version')) navigate('/login', { replace: true })
     }
     boot()
   }, [currentUser, navigate, setCurrentUser])
