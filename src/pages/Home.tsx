@@ -4,7 +4,7 @@ import { useLiveQuery } from '@electric-sql/pglite-react'
 import {
   Plus, FolderOpen, Archive, ArrowUpRight,
   Zap, CheckCircle2, Circle, AlertCircle,
-  User, TrendingUp, Box,
+  User, TrendingUp, Box, LogOut,
 } from 'lucide-react'
 import type { DbProject } from '@/types/db'
 import { createProject } from '@/db/queries/projects'
@@ -190,7 +190,7 @@ function Stat({ label, value, sub, icon: Icon, accent }: {
 export default function Home() {
   const navigate = useNavigate()
   const [searchParams] = useSearchParams()
-  const { currentUser, setCurrentUser } = useStore()
+  const { currentUser, setCurrentUser, logout } = useStore()
   const [showNew, setShowNew] = useState(searchParams.get('new') === '1')
   const [showArchived, setShowArchived] = useState(false)
 
@@ -252,6 +252,13 @@ export default function Home() {
             <button onClick={() => navigate('/profile')} className="btn-ghost text-[12px] flex items-center gap-1.5">
               <User size={12} strokeWidth={1.8} />
               {currentUser?.name ?? 'Profile'}
+            </button>
+            <button
+              onClick={async () => { await logout(); navigate('/login') }}
+              className="btn-ghost text-[12px] flex items-center gap-1.5 text-white/40 hover:text-red-400"
+              title="Log out"
+            >
+              <LogOut size={12} strokeWidth={1.8} />
             </button>
             <Button size="sm" onClick={() => setShowNew(true)} className="ml-2 gap-1.5">
               <Plus size={13} strokeWidth={2} />New
