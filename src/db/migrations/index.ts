@@ -28,6 +28,7 @@ export async function runMigrations(db: PGlite | PGliteWithLive): Promise<void> 
     if (migration.version > currentVersion) {
       const sql = loadSql(migration.file)
       await db.exec(sql)
+      await db.exec(`UPDATE app_meta SET value = '${migration.version}' WHERE key = 'schema_version'`)
       console.log(`[DB] Applied migration v${migration.version}`)
     }
   }

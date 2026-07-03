@@ -16,10 +16,17 @@ function App({ db }: { db: PGliteWithLive }) {
 
   useEffect(() => {
     async function boot() {
-      const uid = await getAppMeta('active_user_id')
-      if (uid) {
-        const user = await getUserById(uid)
-        if (user) setCurrentUser(user)
+      try {
+        const uid = await getAppMeta('active_user_id')
+        const ph = await getAppMeta('pin_hash')
+        console.log('[boot] uid:', uid || '(none)', '| pin_hash:', ph ? '✓' : '(none)')
+        if (uid) {
+          const user = await getUserById(uid)
+          console.log('[boot] user:', user?.name ?? 'NOT FOUND IN DB')
+          if (user) setCurrentUser(user)
+        }
+      } catch (e) {
+        console.error('[boot] ERROR reading session:', e)
       }
       setSessionReady()
       setReady(true)
