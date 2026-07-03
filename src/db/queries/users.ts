@@ -5,7 +5,8 @@ export async function createUser(data: { name: string; email: string; role?: 'ad
   const db = getDb()
   const id = crypto.randomUUID()
   const r = await db.query<DbUser>(
-    `INSERT INTO users (id, email, name, role) VALUES ($1,$2,$3,$4) RETURNING *`,
+    `INSERT INTO users (id, email, name, role) VALUES ($1,$2,$3,$4)
+     ON CONFLICT (email) DO UPDATE SET name = EXCLUDED.name RETURNING *`,
     [id, data.email, data.name, data.role ?? 'teammate'],
   )
   return r.rows[0]
