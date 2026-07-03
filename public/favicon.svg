@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <rect width="32" height="32" rx="8" fill="#7c3aed"/>
+  <!-- Box icon (simplified from lucide-box, stroked white) -->
+  <path d="M16 5 L27 11 L27 21 L16 27 L5 21 L5 11 Z" fill="none" stroke="white" stroke-width="2" stroke-linejoin="round"/>
+  <path d="M16 5 L16 27" fill="none" stroke="white" stroke-width="1.5" opacity="0.6"/>
+  <path d="M5 11 L27 11" fill="none" stroke="white" stroke-width="1.5" opacity="0.6"/>
+</svg>

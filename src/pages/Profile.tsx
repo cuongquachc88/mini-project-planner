@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useStore } from '@/store'
-import { createUser, updateUser, getUserById, getAppMeta, setAppMeta } from '@/db/queries/users'
+import { updateUser, getUserById, getAppMeta, setAppMeta } from '@/db/queries/users'
 import { useGoogleDrive } from '@/hooks/useGoogleDrive'
 import { hashPin, verifyPin } from '@/lib/utils/pin'
 import { Input } from '@/components/ui/Input'
@@ -57,28 +57,30 @@ export default function Profile() {
       if (userId) {
         const user = await getUserById(userId)
         if (user) { setCurrentUser(user); setName(user.name); setEmail(user.email) }
+        else navigate('/login')
+      } else {
+        navigate('/login')
       }
       const ph = await getAppMeta('pin_hash')
       setHasPinHash(ph)
     }
-    load()
-  }, [setCurrentUser])
+    if (!currentUser) load()
+    else {
+      setName(currentUser.name)
+      setEmail(currentUser.email)
+      getAppMeta('pin_hash').then(setHasPinHash)
+    }
+  }, [currentUser, navigate, setCurrentUser])
 
   async function handleSave() {
     if (!name.trim() || !email.trim()) { setError('Name and email are required'); return }
+    if (!currentUser) return
     setSaving(true); setError('')
     try {
-      if (currentUser) {
-        const updated = await updateUser(currentUser.id, { name: name.trim(), email: email.trim() })
-        setCurrentUser(updated)
-        setSaved(true)
-        setTimeout(() => setSaved(false), 2500)
-      } else {
-        const user = await createUser({ name: name.trim(), email: email.trim(), role: 'admin' })
-        await setAppMeta('active_user_id', user.id)
-        setCurrentUser(user)
-        navigate('/')
-      }
+      const updated = await updateUser(currentUser.id, { name: name.trim(), email: email.trim() })
+      setCurrentUser(updated)
+      setSaved(true)
+      setTimeout(() => setSaved(false), 2500)
     } catch (e) {
       setError(String(e))
     } finally {
@@ -117,29 +119,21 @@ export default function Profile() {
     setTimeout(() => setPinSuccess(''), 3000)
   }
 
-  const isNewUser = !currentUser
-
   return (
     <div className="min-h-screen bg-[#0d0d0f] flex items-start justify-center p-8">
       <div className="w-full max-w-lg space-y-4">
 
         {/* Header */}
         <div className="mb-6">
-          {!isNewUser && (
-            <button
-              onClick={() => navigate(-1)}
-              className="flex items-center gap-1.5 text-[12px] text-white/30 hover:text-white/60 transition-colors mb-4"
-            >
-              <ArrowLeft size={13} strokeWidth={1.8} />
-              Back
-            </button>
-          )}
-          <h1 className="font-display text-[22px] font-bold text-white tracking-tight">
-            {isNewUser ? 'Welcome to Planner' : 'Profile'}
-          </h1>
-          <p className="text-[12px] text-white/35 mt-1">
-            {isNewUser ? 'Set up your identity to get started' : 'Manage your account and preferences'}
-          </p>
+          <button
+            onClick={() => navigate(-1)}
+            className="flex items-center gap-1.5 text-[12px] text-white/30 hover:text-white/60 transition-colors mb-4"
+          >
+            <ArrowLeft size={13} strokeWidth={1.8} />
+            Back
+          </button>
+          <h1 className="font-display text-[22px] font-bold text-white tracking-tight">Profile</h1>
+          <p className="text-[12px] text-white/35 mt-1">Manage your account and preferences</p>
         </div>
 
         {/* Identity */}
@@ -149,7 +143,6 @@ export default function Profile() {
               value={name}
               onChange={(e) => setName(e.target.value)}
               placeholder="Your name"
-              autoFocus={isNewUser}
             />
           </LabelRow>
           <LabelRow label="Email">
@@ -166,7 +159,7 @@ export default function Profile() {
           <div className="flex items-center gap-2 pt-1">
             <Button onClick={handleSave} disabled={saving} size="sm" className="gap-1.5">
               {saving ? <RefreshCw size={12} className="animate-spin" /> : saved ? <Check size={12} /> : <User size={12} />}
-              {saving ? 'Saving…' : saved ? 'Saved' : isNewUser ? 'Get started' : 'Save changes'}
+              {saving ? 'Saving…' : saved ? 'Saved' : 'Save changes'}
             </Button>
           </div>
         </Section>
