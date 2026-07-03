@@ -4,8 +4,6 @@ import { PGliteProvider } from '@electric-sql/pglite-react'
 import { RouterProvider } from 'react-router-dom'
 import { initDb } from '@/db/client'
 import { DbContext } from '@/hooks/useDb'
-import { getAppMeta, getUserById } from '@/db/queries/users'
-import { PinLock } from '@/components/PinLock'
 import { useStore } from '@/store'
 import { router } from './App'
 import './index.css'
@@ -17,26 +15,13 @@ function App({ db }: { db: PGliteWithLive }) {
 
   useEffect(() => {
     async function boot() {
-      const [h, uid] = await Promise.all([
-        getAppMeta('pin_hash'),
-        getAppMeta('active_user_id'),
-      ])
-      if (uid) {
-        const user = await getUserById(uid)
-        if (user) setCurrentUser(user)
-      }
-      // If no user exists yet, skip the lock screen entirely
-      setPinHash(uid ? h : null)
-      if (!uid || !h) unlock()
+      setPinHash(null)
+      unlock()
     }
     boot()
   }, [])
 
   if (pinHash === 'loading') return null
-
-  if (pinHash && locked) {
-    return <PinLock pinHash={pinHash} onUnlock={unlock} userName={currentUser?.name} />
-  }
 
   return (
     <PGliteProvider db={db}>

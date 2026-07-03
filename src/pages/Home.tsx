@@ -8,7 +8,7 @@ import {
 } from 'lucide-react'
 import type { DbProject } from '@/types/db'
 import { createProject } from '@/db/queries/projects'
-import { getAppMeta, getUserById } from '@/db/queries/users'
+import { getAppMeta } from '@/db/queries/users'
 import { useStore } from '@/store'
 import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
@@ -219,17 +219,9 @@ export default function Home() {
     ? Math.round((gs.done_items / gs.total_items) * 100) : 0
 
   useEffect(() => {
-    async function boot() {
-      if (currentUser) return
-      const uid = await getAppMeta('active_user_id')
-      if (uid) {
-        const u = await getUserById(uid)
-        if (u) { setCurrentUser(u); return }
-      }
-      if (await getAppMeta('schema_version')) navigate('/login', { replace: true })
-    }
-    boot()
-  }, [currentUser, navigate, setCurrentUser])
+    // Always guard /ui behind /login — Login page handles both PIN unlock and registration
+    if (!currentUser) navigate('/login', { replace: true })
+  }, [currentUser, navigate])
 
   const greeting = currentUser
     ? `Good ${new Date().getHours() < 12 ? 'morning' : new Date().getHours() < 18 ? 'afternoon' : 'evening'}, ${currentUser.name.split(' ')[0]}`
