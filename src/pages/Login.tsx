@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Box, ArrowRight, User, Mail, Lock, Eye, EyeOff, ShieldCheck } from 'lucide-react'
-import { createUser, setAppMeta, getAppMeta, getUserById } from '@/db/queries/users'
+import { createUser, setAppMeta, getAppMeta } from '@/db/queries/users'
 import { hashPin, verifyPin } from '@/lib/utils/pin'
 import { useStore } from '@/store'
 import { Input } from '@/components/ui/Input'
@@ -11,10 +11,10 @@ type Mode = 'loading' | 'unlock' | 'register-identity' | 'register-pin'
 
 export default function Login() {
   const navigate = useNavigate()
-  const { setCurrentUser, unlock } = useStore()
+  const { setCurrentUser, unlock, currentUser, sessionReady } = useStore()
 
   const [mode, setMode] = useState<Mode>('loading')
-  const [existingUser, setExistingUser] = useState<{ name: string; pinHash: string } | null>(null)
+  const [pinHash, setPinHash] = useState<string | null>(null)
 
   // Registration state
   const [name, setName] = useState('')
@@ -32,22 +32,17 @@ export default function Login() {
   const inputsRef = useRef<(HTMLInputElement | null)[]>([])
 
   useEffect(() => {
-    async function detect() {
-      const uid = await getAppMeta('active_user_id')
-      const ph = await getAppMeta('pin_hash')
-      if (uid && ph) {
-        const user = await getUserById(uid)
-        if (user) {
-          setCurrentUser(user)
-          setExistingUser({ name: user.name, pinHash: ph })
-          setMode('unlock')
-          return
-        }
-      }
+    if (!sessionReady) return
+    // session already loaded by main.tsx — just read pin_hash
+    if (currentUser) {
+      getAppMeta('pin_hash').then(ph => {
+        setPinHash(ph)
+        setMode(ph ? 'unlock' : 'register-identity')
+      })
+    } else {
       setMode('register-identity')
     }
-    detect()
-  }, [setCurrentUser])
+  }, [sessionReady, currentUser])
 
   // Focus first PIN input when unlock mode appears
   useEffect(() => {
@@ -64,7 +59,7 @@ export default function Login() {
     setPinError(false)
     if (val && idx < 3) inputsRef.current[idx + 1]?.focus()
     if (next.every(d => d !== '')) {
-      const ok = await verifyPin(next.join(''), existingUser!.pinHash)
+      const ok = await verifyPin(next.join(''), pinHash!)
       if (ok) {
         unlock()
         navigate('/ui', { replace: true })
@@ -144,7 +139,7 @@ export default function Login() {
           <Lock size={24} className="text-violet-400" strokeWidth={1.8} />
         </div>
         <h1 className="text-[24px] font-bold text-white">
-          Welcome back, {existingUser!.name.split(' ')[0]}
+          Welcome back, {currentUser?.name.split(' ')[0]}
         </h1>
         <p className="text-[13px] text-white/40 mt-1.5">Enter your PIN to continue</p>
       </div>

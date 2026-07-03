@@ -190,7 +190,7 @@ function Stat({ label, value, sub, icon: Icon, accent }: {
 export default function Home() {
   const navigate = useNavigate()
   const [searchParams] = useSearchParams()
-  const { currentUser, setCurrentUser, logout } = useStore()
+  const { currentUser, setCurrentUser, logout, sessionReady } = useStore()
   const [showNew, setShowNew] = useState(searchParams.get('new') === '1')
   const [showArchived, setShowArchived] = useState(false)
 
@@ -219,9 +219,8 @@ export default function Home() {
     ? Math.round((gs.done_items / gs.total_items) * 100) : 0
 
   useEffect(() => {
-    // Always guard /ui behind /login — Login page handles both PIN unlock and registration
-    if (!currentUser) navigate('/login', { replace: true })
-  }, [currentUser, navigate])
+    if (sessionReady && !currentUser) navigate('/login', { replace: true })
+  }, [sessionReady, currentUser, navigate])
 
   const greeting = currentUser
     ? `Good ${new Date().getHours() < 12 ? 'morning' : new Date().getHours() < 18 ? 'afternoon' : 'evening'}, ${currentUser.name.split(' ')[0]}`

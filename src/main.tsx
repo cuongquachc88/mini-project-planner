@@ -4,24 +4,30 @@ import { PGliteProvider } from '@electric-sql/pglite-react'
 import { RouterProvider } from 'react-router-dom'
 import { initDb } from '@/db/client'
 import { DbContext } from '@/hooks/useDb'
+import { getAppMeta, getUserById } from '@/db/queries/users'
 import { useStore } from '@/store'
 import { router } from './App'
 import './index.css'
 import type { PGliteWithLive } from '@electric-sql/pglite/live'
 
 function App({ db }: { db: PGliteWithLive }) {
-  const [pinHash, setPinHash] = useState<string | null | 'loading'>('loading')
-  const { locked, unlock, setCurrentUser, currentUser } = useStore()
+  const [ready, setReady] = useState(false)
+  const { setCurrentUser, setSessionReady } = useStore()
 
   useEffect(() => {
     async function boot() {
-      setPinHash(null)
-      unlock()
+      const uid = await getAppMeta('active_user_id')
+      if (uid) {
+        const user = await getUserById(uid)
+        if (user) setCurrentUser(user)
+      }
+      setSessionReady()
+      setReady(true)
     }
     boot()
   }, [])
 
-  if (pinHash === 'loading') return null
+  if (!ready) return null
 
   return (
     <PGliteProvider db={db}>
