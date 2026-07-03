@@ -5,9 +5,10 @@ import { verifyPin } from '@/lib/utils/pin'
 interface Props {
   pinHash: string
   onUnlock: () => void
+  userName?: string
 }
 
-export function PinLock({ pinHash, onUnlock }: Props) {
+export function PinLock({ pinHash, onUnlock, userName }: Props) {
   const [digits, setDigits] = useState(['', '', '', ''])
   const [error, setError] = useState(false)
   const [show, setShow] = useState(false)
@@ -62,8 +63,10 @@ export function PinLock({ pinHash, onUnlock }: Props) {
           <Lock size={28} className="text-violet-400" />
         </div>
 
-        <h1 className="text-[20px] font-bold text-white mb-1">Enter your PIN</h1>
-        <p className="text-[13px] text-white/35 mb-8">This workspace is PIN-protected</p>
+        <h1 className="text-[20px] font-bold text-white mb-1">
+          {userName ? `Welcome back, ${userName.split(' ')[0]}` : 'Enter your PIN'}
+        </h1>
+        <p className="text-[13px] text-white/35 mb-8">Enter your PIN to unlock</p>
 
         <div className={cn('flex justify-center gap-3 mb-3', shaking && 'animate-shake')}>
           {digits.map((d, i) => (

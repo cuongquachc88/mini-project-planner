@@ -17,9 +17,15 @@ export async function setupIdentity(page: Page, name = 'Test User', email = 'tes
   const loginFormVisible = await page.locator('input[placeholder="Your name"]').isVisible({ timeout: 2000 }).catch(() => false)
 
   if (onLogin || loginFormVisible) {
+    // Step 1: identity
     await page.locator('input[placeholder="Your name"]').waitFor({ state: 'visible', timeout: 5000 })
     await page.locator('input[placeholder="Your name"]').fill(name)
     await page.locator('input[placeholder="you@example.com"]').fill(email)
+    await page.getByRole('button', { name: /^next$/i }).click()
+    // Step 2: PIN
+    await page.locator('input[placeholder="••••"]').first().waitFor({ state: 'visible', timeout: 5000 })
+    await page.locator('input[placeholder="••••"]').first().fill('1234')
+    await page.locator('input[placeholder="••••"]').last().fill('1234')
     await page.getByRole('button', { name: /get started/i }).click()
     // Wait for navigation to /ui
     await page.waitForURL('/ui', { timeout: 10000 })

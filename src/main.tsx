@@ -13,7 +13,7 @@ import type { PGliteWithLive } from '@electric-sql/pglite/live'
 
 function App({ db }: { db: PGliteWithLive }) {
   const [pinHash, setPinHash] = useState<string | null | 'loading'>('loading')
-  const { locked, unlock, setCurrentUser } = useStore()
+  const { locked, unlock, setCurrentUser, currentUser } = useStore()
 
   useEffect(() => {
     async function boot() {
@@ -21,12 +21,13 @@ function App({ db }: { db: PGliteWithLive }) {
         getAppMeta('pin_hash'),
         getAppMeta('active_user_id'),
       ])
-      setPinHash(h)
-      if (!h) unlock()
       if (uid) {
         const user = await getUserById(uid)
         if (user) setCurrentUser(user)
       }
+      // If no user exists yet, skip the lock screen entirely
+      setPinHash(uid ? h : null)
+      if (!uid || !h) unlock()
     }
     boot()
   }, [])
@@ -34,7 +35,7 @@ function App({ db }: { db: PGliteWithLive }) {
   if (pinHash === 'loading') return null
 
   if (pinHash && locked) {
-    return <PinLock pinHash={pinHash} onUnlock={unlock} />
+    return <PinLock pinHash={pinHash} onUnlock={unlock} userName={currentUser?.name} />
   }
 
   return (
