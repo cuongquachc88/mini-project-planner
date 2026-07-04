@@ -18,14 +18,15 @@ export async function createProject(data: {
   description?: string
   key: string
   color?: string
+  icon?: string
   ownerId: string
 }): Promise<DbProject> {
   const db = getDb()
   const id = crypto.randomUUID()
   const r = await db.query<DbProject>(
-    `INSERT INTO projects (id, name, description, key, owner_id, color)
-     VALUES ($1,$2,$3,$4,$5,$6) RETURNING *`,
-    [id, data.name, data.description ?? null, data.key.toUpperCase(), data.ownerId, data.color ?? null],
+    `INSERT INTO projects (id, name, description, key, owner_id, color, icon)
+     VALUES ($1,$2,$3,$4,$5,$6,$7) RETURNING *`,
+    [id, data.name, data.description ?? null, data.key.toUpperCase(), data.ownerId, data.color ?? null, data.icon ?? null],
   )
   const project = r.rows[0]
 
@@ -45,7 +46,7 @@ export async function createProject(data: {
   return project
 }
 
-export async function updateProject(id: string, data: Partial<Pick<DbProject, 'name' | 'description' | 'color' | 'archived'>>): Promise<void> {
+export async function updateProject(id: string, data: Partial<Pick<DbProject, 'name' | 'description' | 'color' | 'icon' | 'archived'>>): Promise<void> {
   const db = getDb()
   const sets: string[] = []
   const vals: unknown[] = []
@@ -53,6 +54,7 @@ export async function updateProject(id: string, data: Partial<Pick<DbProject, 'n
   if (data.name !== undefined) { sets.push(`name = $${i++}`); vals.push(data.name) }
   if (data.description !== undefined) { sets.push(`description = $${i++}`); vals.push(data.description) }
   if (data.color !== undefined) { sets.push(`color = $${i++}`); vals.push(data.color) }
+  if (data.icon !== undefined) { sets.push(`icon = $${i++}`); vals.push(data.icon) }
   if (data.archived !== undefined) { sets.push(`archived = $${i++}`); vals.push(data.archived) }
   if (sets.length === 0) return
   vals.push(id)

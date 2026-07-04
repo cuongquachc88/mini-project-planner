@@ -5,6 +5,7 @@ import { ChevronDown, Plus, LayoutGrid } from 'lucide-react'
 import type { DbProject } from '@/types/db'
 import { useProject } from '@/hooks/useProject'
 import { cn } from '@/lib/utils/cn'
+import { ProjectAvatar } from '@/components/ProjectAvatar'
 
 export function ProjectSwitcher() {
   const [open, setOpen] = useState(false)
@@ -24,7 +25,7 @@ export function ProjectSwitcher() {
         )}
       >
         {project
-          ? <div className="w-4 h-4 rounded-[4px] shrink-0" style={{ backgroundColor: project.color ?? '#7c3aed' }} />
+          ? <ProjectAvatar color={project.color} icon={project.icon} size="xs" />
           : <LayoutGrid size={14} className="text-white/30" />
         }
         <span className="font-medium text-[13px] text-white max-w-[150px] truncate leading-none">
@@ -49,7 +50,7 @@ export function ProjectSwitcher() {
                     p.id === project?.id ? 'bg-white/[0.07] text-white' : 'text-white/50 hover:text-white hover:bg-white/[0.04]',
                   )}
                 >
-                  <div className="w-3.5 h-3.5 rounded-[3px] shrink-0" style={{ backgroundColor: p.color ?? '#7c3aed' }} />
+                  <ProjectAvatar color={p.color} icon={p.icon} size="xs" />
                   <span className="truncate flex-1 text-left">{p.name}</span>
                   <span className="text-[10px] text-white/20 font-mono">{p.key}</span>
                 </button>

@@ -16,6 +16,7 @@ export interface DbProject {
   key: string
   owner_id: string | null
   color: string | null
+  icon: string | null
   archived: boolean
   created_at: string
 }

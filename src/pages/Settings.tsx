@@ -7,6 +7,8 @@ import type { DbCustomStage, DbLabel } from '@/types/db'
 import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
 import { cn } from '@/lib/utils/cn'
+import { ProjectAvatar } from '@/components/ProjectAvatar'
+import { ProjectAppearancePicker } from '@/components/ProjectAppearancePicker'
 
 const COLORS = [
   { hex: '#7c3aed', name: 'Violet' },
@@ -78,12 +80,16 @@ export default function Settings() {
   const [newLabelColor, setNewLabelColor] = useState(COLORS[0].hex)
   const [projectName, setProjectName] = useState(project?.name ?? '')
   const [projectDesc, setProjectDesc] = useState(project?.description ?? '')
+  const [projectColor, setProjectColor] = useState(project?.color ?? '#7c3aed')
+  const [projectIcon, setProjectIcon] = useState<string | null>(project?.icon ?? null)
   const [nameSaved, setNameSaved] = useState(false)
 
   useEffect(() => {
     if (project?.name && !projectName) setProjectName(project.name)
     if (project?.description !== undefined && !projectDesc) setProjectDesc(project.description ?? '')
-  }, [project?.name, project?.description])
+    if (project?.color && !projectColor) setProjectColor(project.color)
+    if (project?.icon !== undefined && !projectIcon) setProjectIcon(project.icon ?? null)
+  }, [project?.name, project?.description, project?.color, project?.icon])
 
   const stages = useLiveQuery<DbCustomStage>(
     `SELECT * FROM custom_stages WHERE project_id = $1 ORDER BY position`,
@@ -112,9 +118,9 @@ export default function Settings() {
     setNewLabelName('')
   }
 
-  async function handleSaveProjectName() {
+  async function handleSaveProject() {
     if (!projectName.trim() || !projectId) return
-    await updateProject(projectId, { name: projectName.trim(), description: projectDesc.trim() })
+    await updateProject(projectId, { name: projectName.trim(), description: projectDesc.trim(), color: projectColor, icon: projectIcon ?? undefined })
     setNameSaved(true)
     setTimeout(() => setNameSaved(false), 2000)
   }
@@ -130,18 +136,25 @@ export default function Settings() {
 
       <div className="flex-1 overflow-auto px-6 py-5 space-y-4">
 
-        {/* Project name + description */}
+        {/* Project identity */}
         <Section title="Project">
-          <div className="space-y-2">
+          <div className="space-y-3">
+            <div className="flex items-center gap-3 mb-1">
+              <ProjectAvatar color={projectColor} icon={projectIcon} size="md" />
+              <div>
+                <p className="text-[13px] font-medium text-white/80">{projectName || 'Untitled'}</p>
+                <p className="text-[11px] text-white/30">{project.key}</p>
+              </div>
+            </div>
             <div className="flex gap-2">
               <Input
                 value={projectName}
                 onChange={e => setProjectName(e.target.value)}
                 placeholder="Project name"
                 className="flex-1"
-                onKeyDown={e => e.key === 'Enter' && handleSaveProjectName()}
+                onKeyDown={e => e.key === 'Enter' && handleSaveProject()}
               />
-              <Button size="sm" onClick={handleSaveProjectName} className="gap-1 shrink-0">
+              <Button size="sm" onClick={handleSaveProject} className="gap-1 shrink-0">
                 {nameSaved ? <Check size={11} /> : null}
                 {nameSaved ? 'Saved' : 'Save'}
               </Button>
@@ -150,7 +163,13 @@ export default function Settings() {
               value={projectDesc}
               onChange={e => setProjectDesc(e.target.value)}
               placeholder="Description — help your team know what this project is about"
-              onKeyDown={e => e.key === 'Enter' && handleSaveProjectName()}
+              onKeyDown={e => e.key === 'Enter' && handleSaveProject()}
+            />
+            <ProjectAppearancePicker
+              color={projectColor}
+              icon={projectIcon}
+              onColor={setProjectColor}
+              onIcon={setProjectIcon}
             />
           </div>
         </Section>

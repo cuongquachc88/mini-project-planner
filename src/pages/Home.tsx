@@ -8,20 +8,21 @@ import {
 } from 'lucide-react'
 import type { DbProject } from '@/types/db'
 import { createProject } from '@/db/queries/projects'
-import { getAppMeta } from '@/db/queries/users'
 import { useStore } from '@/store'
 import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
-import { cn } from '@/lib/utils/cn'
+import { ProjectAvatar } from '@/components/ProjectAvatar'
+import { ProjectAppearanceButton } from '@/components/ProjectAppearancePicker'
 
-const COLORS = ['#7c3aed','#2563eb','#0891b2','#059669','#d97706','#dc2626','#db2777','#7c3aed']
+const DEFAULT_COLOR = '#7c3aed'
 
 /* ── New Project Modal ─────────────────────────────── */
 function NewProjectModal({ onClose, onCreated }: { onClose: () => void; onCreated: (id: string) => void }) {
   const { currentUser } = useStore()
   const [name, setName] = useState('')
   const [key, setKey] = useState('')
-  const [color, setColor] = useState(COLORS[0])
+  const [color, setColor] = useState(DEFAULT_COLOR)
+  const [icon, setIcon] = useState<string | null>(null)
   const [desc, setDesc] = useState('')
   const [loading, setLoading] = useState(false)
   const [err, setErr] = useState('')
@@ -37,7 +38,7 @@ function NewProjectModal({ onClose, onCreated }: { onClose: () => void; onCreate
     if (!currentUser) { setErr('Set up your profile first'); return }
     setLoading(true); setErr('')
     try {
-      const p = await createProject({ name: name.trim(), key: key.trim(), description: desc, color, ownerId: currentUser.id })
+      const p = await createProject({ name: name.trim(), key: key.trim(), description: desc, color, icon: icon ?? undefined, ownerId: currentUser.id })
       onCreated(p.id)
     } catch(e) { setErr(String(e)) }
     finally { setLoading(false) }
@@ -48,7 +49,7 @@ function NewProjectModal({ onClose, onCreated }: { onClose: () => void; onCreate
       <div className="w-full max-w-md rounded-2xl border border-white/[0.08] shadow-2xl shadow-black/60 overflow-hidden animate-fade-in" style={{ background: '#111113' }}>
         <div className="px-6 pt-6 pb-4 border-b border-white/[0.06]">
           <div className="flex items-center gap-3">
-            <div className="w-8 h-8 rounded-lg shrink-0" style={{ backgroundColor: color }} />
+            <ProjectAvatar color={color} icon={icon} size="md" />
             <h2 className="text-[15px] font-semibold text-white">New project</h2>
           </div>
         </div>
@@ -63,15 +64,8 @@ function NewProjectModal({ onClose, onCreated }: { onClose: () => void; onCreate
               <Input value={key} onChange={e => setKey(e.target.value.toUpperCase().replace(/[^A-Z]/g,'').slice(0,24))} placeholder="PROJ" className="font-mono" />
             </div>
             <div>
-              <label className="block text-[11px] font-medium text-white/40 mb-1.5 uppercase tracking-wider">Color</label>
-              <div className="flex gap-1.5 mt-0.5 flex-wrap w-[108px]">
-                {COLORS.map(c => (
-                  <button key={c} onClick={() => setColor(c)}
-                    className="w-6 h-6 rounded-md transition-all hover:scale-110"
-                    style={{ backgroundColor: c, outline: color === c ? `2px solid ${c}` : 'none', outlineOffset: 2 }}
-                  />
-                ))}
-              </div>
+              <label className="block text-[11px] font-medium text-white/40 mb-1.5 uppercase tracking-wider">Appearance</label>
+              <ProjectAppearanceButton color={color} icon={icon} onColor={setColor} onIcon={setIcon} />
             </div>
           </div>
           <div>
@@ -117,9 +111,9 @@ function ProjectRow({ project, onOpen }: { project: DbProject; onOpen: () => voi
       onClick={onOpen}
       className="group flex items-center gap-4 px-5 py-3.5 border-b border-white/[0.04] hover:bg-white/[0.025] transition-colors cursor-pointer last:border-0"
     >
-      {/* Color + name */}
+      {/* Avatar + name */}
       <div className="flex items-center gap-3 w-56 shrink-0">
-        <div className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: project.color ?? '#7c3aed' }} />
+        <ProjectAvatar color={project.color} icon={project.icon} size="sm" />
         <div className="flex-1 min-w-0">
           <span className="text-[13px] font-medium text-white/80 group-hover:text-white transition-colors truncate block">
             {project.name}
