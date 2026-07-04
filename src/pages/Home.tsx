@@ -70,7 +70,13 @@ function NewProjectModal({ onClose, onCreated }: { onClose: () => void; onCreate
           </div>
           <div>
             <label className="block text-[11px] font-medium text-white/40 mb-1.5 uppercase tracking-wider">Description</label>
-            <Input value={desc} onChange={e => setDesc(e.target.value)} placeholder="Optional" />
+            <textarea
+              value={desc}
+              onChange={e => setDesc(e.target.value)}
+              placeholder="What is this project about?"
+              rows={3}
+              className="w-full bg-white/[0.04] border border-white/[0.09] rounded-md px-3 py-1.5 text-xs text-white focus:outline-none focus:border-violet-500/60 focus:bg-white/[0.06] placeholder:text-white/25 transition-all resize-none"
+            />
           </div>
           {err && <p className="text-red-400 text-xs">{err}</p>}
           <div className="flex gap-2 pt-1">

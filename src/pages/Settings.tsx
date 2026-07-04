@@ -159,11 +159,12 @@ export default function Settings() {
                 {nameSaved ? 'Saved' : 'Save'}
               </Button>
             </div>
-            <Input
+            <textarea
               value={projectDesc}
               onChange={e => setProjectDesc(e.target.value)}
               placeholder="Description — help your team know what this project is about"
-              onKeyDown={e => e.key === 'Enter' && handleSaveProject()}
+              rows={4}
+              className="w-full bg-white/[0.04] border border-white/[0.09] rounded-md px-3 py-1.5 text-xs text-white focus:outline-none focus:border-violet-500/60 focus:bg-white/[0.06] placeholder:text-white/25 transition-all resize-none"
             />
             <ProjectAppearancePicker
               color={projectColor}

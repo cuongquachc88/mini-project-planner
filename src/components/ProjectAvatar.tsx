@@ -3,12 +3,13 @@ import type { LucideProps } from 'lucide-react'
 
 // Curated set of project-relevant icons by category
 export const PROJECT_ICONS: Record<string, string[]> = {
-  Product: ['Box','Package','Layers','LayoutDashboard','Monitor','Smartphone','Globe','AppWindow'],
-  Dev:     ['Code2','Terminal','GitBranch','Database','Server','Cpu','Bug','Braces'],
-  Design:  ['Pen','Paintbrush','Palette','Figma','Crop','Ruler','Shapes','Frame'],
-  Team:    ['Users','UserCircle','Building2','Briefcase','Handshake','Target','Trophy','Star'],
-  Work:    ['Rocket','Zap','Flame','Bolt','ClipboardList','CheckSquare','ListTodo','BarChart2'],
-  Misc:    ['Leaf','Globe2','Heart','Shield','Lock','Key','Lightbulb','Compass'],
+  Product: ['Box','Package','Layers','LayoutDashboard','Monitor','Smartphone','Globe','AppWindow','Tablet','Watch','Tv','Radio','Headphones','Camera','Printer','ScanLine'],
+  Dev:     ['Code2','Terminal','GitBranch','Database','Server','Cpu','Bug','Braces','GitCommit','GitMerge','GitPullRequest','Webhook','Binary','Network','HardDrive','Cloud'],
+  Design:  ['Pen','Paintbrush','Palette','Crop','Ruler','Shapes','Frame','PenTool','Vector','Spline','Pencil','Eraser','Scissors','Wand2','Pipette','Layers2'],
+  Team:    ['Users','UserCircle','Building2','Briefcase','Handshake','Target','Trophy','Star','UserCheck','UserPlus','PersonStanding','Group','Crown','Medal','Award','BadgeCheck'],
+  Work:    ['Rocket','Zap','Flame','ClipboardList','CheckSquare','ListTodo','BarChart2','TrendingUp','Activity','LineChart','PieChart','Gauge','Timer','AlarmClock','Calendar','CalendarCheck'],
+  Plan:    ['Map','Compass','Flag','Milestone','Route','Navigation','Crosshair','Focus','Telescope','Binoculars','Search','ScanSearch','Microscope','FlaskConical','Beaker','TestTube'],
+  Misc:    ['Leaf','Heart','Shield','Lock','Key','Lightbulb','Bolt','Anchor','Aperture','Archive','Bell','Bookmark','Box','Briefcase','Building','Cable'],
 }
 
 

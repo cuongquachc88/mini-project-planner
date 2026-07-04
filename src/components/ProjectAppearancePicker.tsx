@@ -6,9 +6,18 @@ import { PROJECT_ICONS, ProjectAvatar } from './ProjectAvatar'
 import { cn } from '@/lib/utils/cn'
 
 const COLORS = [
-  '#7c3aed','#6366f1','#2563eb','#0891b2','#0d9488',
-  '#059669','#65a30d','#d97706','#ea580c','#dc2626',
-  '#db2777','#9333ea','#475569','#374151',
+  // purples / blues
+  '#7c3aed','#6d28d9','#9333ea','#a855f7','#6366f1','#4f46e5','#3730a3',
+  // blues / cyans
+  '#2563eb','#1d4ed8','#0ea5e9','#0891b2','#0e7490','#06b6d4','#0d9488',
+  // greens
+  '#059669','#047857','#10b981','#65a30d','#4d7c0f','#16a34a','#15803d',
+  // warm
+  '#d97706','#b45309','#f59e0b','#ea580c','#c2410c','#f97316','#fb923c',
+  // reds / pinks
+  '#dc2626','#b91c1c','#e11d48','#db2777','#be185d','#ec4899','#f43f5e',
+  // neutrals
+  '#64748b','#475569','#374151','#1f2937','#6b7280','#9ca3af','#334155',
 ]
 
 interface Props {
@@ -22,7 +31,7 @@ export function ProjectAppearancePicker({ color, icon, onColor, onIcon }: Props)
   const [tab, setTab] = useState<'color' | 'icon'>('color')
 
   return (
-    <div className="rounded-xl border border-white/[0.08] overflow-hidden bg-[#111113]">
+    <div className="rounded-lg border border-white/[0.08] overflow-hidden bg-[#111113]">
       {/* Tabs */}
       <div className="flex border-b border-white/[0.06]">
         {(['color', 'icon'] as const).map(t => (
@@ -30,8 +39,8 @@ export function ProjectAppearancePicker({ color, icon, onColor, onIcon }: Props)
             key={t}
             onClick={() => setTab(t)}
             className={cn(
-              'flex-1 py-2 text-[11px] font-medium uppercase tracking-wider transition-colors',
-              tab === t ? 'text-white bg-white/[0.04]' : 'text-white/30 hover:text-white/60',
+              'flex-1 py-1.5 text-[10px] font-medium uppercase tracking-wider transition-colors',
+              tab === t ? 'text-white bg-white/[0.04]' : 'text-white/25 hover:text-white/55',
             )}
           >
             {t}
@@ -40,36 +49,35 @@ export function ProjectAppearancePicker({ color, icon, onColor, onIcon }: Props)
       </div>
 
       {tab === 'color' && (
-        <div className="p-3 grid grid-cols-7 gap-1.5">
+        <div className="p-2 grid grid-cols-7 gap-1">
           {COLORS.map(c => (
             <button
               key={c}
               onClick={() => onColor(c)}
-              className="w-7 h-7 rounded-lg transition-all hover:scale-110 flex items-center justify-center"
+              className="w-5 h-5 rounded-md transition-all hover:scale-110 flex items-center justify-center"
               style={{ backgroundColor: c }}
             >
-              {color === c && <Check size={11} className="text-white" strokeWidth={2.5} />}
+              {color === c && <Check size={9} className="text-white" strokeWidth={3} />}
             </button>
           ))}
         </div>
       )}
 
       {tab === 'icon' && (
-        <div className="p-3 space-y-3 max-h-52 overflow-y-auto">
-          {/* No icon option */}
+        <div className="p-2 space-y-2 max-h-48 overflow-y-auto">
           <button
             onClick={() => onIcon(null)}
             className={cn(
-              'flex items-center gap-1.5 px-2 py-1 rounded-md text-[11px] transition-colors',
-              !icon ? 'bg-white/[0.08] text-white' : 'text-white/30 hover:text-white/60 hover:bg-white/[0.04]',
+              'flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] transition-colors',
+              !icon ? 'bg-white/[0.08] text-white' : 'text-white/25 hover:text-white/55 hover:bg-white/[0.04]',
             )}
           >
-            <Ban size={11} strokeWidth={1.5} /> None
+            <Ban size={9} strokeWidth={1.5} /> None
           </button>
           {Object.entries(PROJECT_ICONS).map(([category, names]) => (
             <div key={category}>
-              <p className="text-[9px] font-semibold text-white/20 uppercase tracking-widest mb-1.5">{category}</p>
-              <div className="grid grid-cols-8 gap-1">
+              <p className="text-[8px] font-semibold text-white/20 uppercase tracking-widest mb-1">{category}</p>
+              <div className="grid grid-cols-10 gap-0.5">
                 {names.map(name => {
                   const Icon = (LucideIcons as unknown as Record<string, React.ComponentType<LucideProps>>)[name]
                   if (!Icon) return null
@@ -79,11 +87,11 @@ export function ProjectAppearancePicker({ color, icon, onColor, onIcon }: Props)
                       onClick={() => onIcon(name)}
                       title={name}
                       className={cn(
-                        'w-7 h-7 rounded-md flex items-center justify-center transition-all hover:scale-110',
-                        icon === name ? 'bg-white/[0.12] text-white' : 'text-white/40 hover:text-white/80 hover:bg-white/[0.06]',
+                        'w-5 h-5 rounded flex items-center justify-center transition-all hover:scale-110',
+                        icon === name ? 'bg-white/[0.14] text-white' : 'text-white/35 hover:text-white/80 hover:bg-white/[0.06]',
                       )}
                     >
-                      <Icon size={13} strokeWidth={1.6} />
+                      <Icon size={11} strokeWidth={1.6} />
                     </button>
                   )
                 })}
@@ -113,7 +121,7 @@ export function ProjectAppearanceButton({ color, icon, onColor, onIcon }: Props)
       </button>
 
       {open && (
-        <div className="absolute top-full left-0 mt-1.5 z-50 w-64 animate-fade-in shadow-2xl shadow-black/60">
+        <div className="absolute top-full left-0 mt-1.5 z-50 w-48 animate-fade-in shadow-2xl shadow-black/60">
           <ProjectAppearancePicker color={color} icon={icon} onColor={onColor} onIcon={onIcon} />
         </div>
       )}
