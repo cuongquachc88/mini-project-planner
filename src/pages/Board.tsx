@@ -141,6 +141,8 @@ export default function Board() {
   const [newType, setNewType] = useState<'task' | 'story' | 'bug' | 'spike'>('task')
   const [newPriority, setNewPriority] = useState<'medium' | 'high' | 'low' | 'critical'>('medium')
   const [newPoints, setNewPoints] = useState('')
+  const [newDesc, setNewDesc] = useState('')
+  const [newAC, setNewAC] = useState('')
   const [selectedItem, setSelectedItem] = useState<DbWorkItem | null>(null)
   const [showFilters, setShowFilters] = useState(false)
   const [activeItem, setActiveItem] = useState<DbWorkItem | null>(null)
@@ -182,6 +184,7 @@ export default function Board() {
 
   function resetAddForm() {
     setNewTitle(''); setNewType('task'); setNewPriority('medium'); setNewPoints('')
+    setNewDesc(''); setNewAC('')
     setAddingToStage(null)
   }
 
@@ -192,6 +195,8 @@ export default function Board() {
       sprintId: activeSprint?.id, reporterId: currentUser.id,
       type: newType, priority: newPriority,
       storyPoints: newPoints ? Number(newPoints) : undefined,
+      description: newDesc.trim() || undefined,
+      acceptanceCriteria: newAC.trim() || undefined,
     })
     resetAddForm()
   }
@@ -301,14 +306,14 @@ export default function Board() {
       {/* Quick add modal */}
       {addingToStage && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm" onClick={e => e.target === e.currentTarget && resetAddForm()}>
-          <div className="w-full max-w-md rounded-2xl border border-white/[0.08] shadow-2xl shadow-black/70 overflow-hidden animate-fade-in bg-[#111113]">
+          <div className="w-full max-w-lg rounded-2xl border border-white/[0.08] shadow-2xl shadow-black/70 overflow-hidden animate-fade-in bg-[#111113] max-h-[92vh] flex flex-col">
             {/* Header */}
             <div className="px-5 pt-5 pb-4 border-b border-white/[0.06] flex items-center justify-between">
               <h3 className="text-[13px] font-semibold text-white/80 uppercase tracking-wider">New work item</h3>
               <button onClick={resetAddForm} className="text-white/20 hover:text-white/60 transition-colors text-lg leading-none">×</button>
             </div>
 
-            <div className="p-5 space-y-4">
+            <div className="p-5 space-y-4 overflow-y-auto flex-1">
               {/* Title */}
               <div>
                 <label className="block text-[10px] font-medium text-white/30 uppercase tracking-wider mb-1.5">Title</label>
@@ -362,6 +367,30 @@ export default function Board() {
                 <select className="input w-full" value={addingToStage} onChange={e => setAddingToStage(e.target.value)}>
                   {stages.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
                 </select>
+              </div>
+
+              {/* Description */}
+              <div>
+                <label className="block text-[10px] font-medium text-white/30 uppercase tracking-wider mb-1.5">Description</label>
+                <textarea
+                  className="w-full bg-white/[0.04] border border-white/[0.09] rounded-lg px-3 py-2 text-[12px] text-white/70 resize-none focus:outline-none focus:border-violet-500/40 placeholder:text-white/20 transition-colors leading-relaxed"
+                  rows={4}
+                  placeholder="What is this work item about?"
+                  value={newDesc}
+                  onChange={e => setNewDesc(e.target.value)}
+                />
+              </div>
+
+              {/* Acceptance Criteria */}
+              <div>
+                <label className="block text-[10px] font-medium text-white/30 uppercase tracking-wider mb-1.5">Acceptance Criteria</label>
+                <textarea
+                  className="w-full bg-white/[0.04] border border-white/[0.09] rounded-lg px-3 py-2 text-[12px] text-white/70 font-mono resize-none focus:outline-none focus:border-violet-500/40 placeholder:text-white/20 transition-colors leading-relaxed"
+                  rows={4}
+                  placeholder={"- [ ] Given … When … Then …\n- [ ] …"}
+                  value={newAC}
+                  onChange={e => setNewAC(e.target.value)}
+                />
               </div>
 
               {/* Actions */}

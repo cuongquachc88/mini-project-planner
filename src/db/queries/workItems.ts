@@ -55,6 +55,7 @@ export async function createWorkItem(data: {
   storyPoints?: number
   dueDate?: string
   description?: string
+  acceptanceCriteria?: string
   parentId?: string
 }): Promise<DbWorkItem> {
   const db = getDb()
@@ -68,14 +69,15 @@ export async function createWorkItem(data: {
   const r = await db.query<DbWorkItem>(
     `INSERT INTO work_items
       (id, project_id, title, type, priority, stage_id, sprint_id, epic_id, milestone_id,
-       assignee_id, reporter_id, story_points, due_date, description, position, parent_id)
-     VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16)
+       assignee_id, reporter_id, story_points, due_date, description, position, parent_id, acceptance_criteria)
+     VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17)
      RETURNING *`,
     [
       id, data.projectId, data.title, data.type ?? 'task', data.priority ?? 'medium',
       data.stageId ?? null, data.sprintId ?? null, data.epicId ?? null, data.milestoneId ?? null,
       data.assigneeId ?? null, data.reporterId ?? null, data.storyPoints ?? null,
       data.dueDate ?? null, data.description ?? null, pos, data.parentId ?? null,
+      data.acceptanceCriteria ?? null,
     ],
   )
   return r.rows[0]
