@@ -1,4 +1,4 @@
-import { defineConfig } from 'vite'
+import { defineConfig } from 'vitest/config'
 import react from '@vitejs/plugin-react'
 import { VitePWA } from 'vite-plugin-pwa'
 import path from 'node:path'
@@ -39,6 +39,11 @@ export default defineConfig({
   },
   optimizeDeps: {
     exclude: ['@electric-sql/pglite'],
+  },
+  test: {
+    globals: true,
+    environment: 'node',
+    include: ['src/**/__tests__/**/*.test.ts'],
   },
   server: {
     port: 5174,

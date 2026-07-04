@@ -6,6 +6,7 @@ const migrations = [
   { version: 2, file: '002_vault_tables.sql' },
   { version: 3, file: '003_costs_wiki.sql' },
   { version: 4, file: '004_project_icon.sql' },
+  { version: 5, file: '005_work_item_enhancements.sql' },
 ]
 
 // Vite transforms ?raw imports at build time; this pattern is resolved statically
