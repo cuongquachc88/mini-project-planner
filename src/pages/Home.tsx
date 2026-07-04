@@ -28,8 +28,8 @@ function NewProjectModal({ onClose, onCreated }: { onClose: () => void; onCreate
 
   function onName(n: string) {
     setName(n)
-    if (!key || key === name.toUpperCase().replace(/[^A-Z]/g,'').slice(0,4))
-      setKey(n.toUpperCase().replace(/[^A-Z]/g,'').slice(0,4))
+    if (!key || key === name.toUpperCase().replace(/[^A-Z]/g,'').slice(0,24))
+      setKey(n.toUpperCase().replace(/[^A-Z]/g,'').slice(0,24))
   }
 
   async function submit() {
@@ -60,7 +60,7 @@ function NewProjectModal({ onClose, onCreated }: { onClose: () => void; onCreate
           <div className="flex gap-3">
             <div className="flex-1">
               <label className="block text-[11px] font-medium text-white/40 mb-1.5 uppercase tracking-wider">Key</label>
-              <Input value={key} onChange={e => setKey(e.target.value.toUpperCase().replace(/[^A-Z]/g,'').slice(0,6))} placeholder="PROJ" className="font-mono" />
+              <Input value={key} onChange={e => setKey(e.target.value.toUpperCase().replace(/[^A-Z]/g,'').slice(0,24))} placeholder="PROJ" className="font-mono" />
             </div>
             <div>
               <label className="block text-[11px] font-medium text-white/40 mb-1.5 uppercase tracking-wider">Color</label>
