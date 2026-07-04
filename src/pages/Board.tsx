@@ -143,6 +143,7 @@ export default function Board() {
   const [newPoints, setNewPoints] = useState('')
   const [newDesc, setNewDesc] = useState('')
   const [newAC, setNewAC] = useState('')
+  const [newAssigneeId, setNewAssigneeId] = useState('')
   const [selectedItem, setSelectedItem] = useState<DbWorkItem | null>(null)
   const [showFilters, setShowFilters] = useState(false)
   const [activeItem, setActiveItem] = useState<DbWorkItem | null>(null)
@@ -167,6 +168,11 @@ export default function Board() {
     fv,
   )?.rows ?? []
 
+  const members = useLiveQuery<{ id: string; name: string }>(
+    `SELECT u.id, u.name FROM users u JOIN project_members pm ON pm.user_id = u.id WHERE pm.project_id = $1 ORDER BY u.name`,
+    [projectId ?? ''],
+  )?.rows ?? []
+
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 6 } }))
 
   function onDragStart(e: DragStartEvent) {
@@ -184,7 +190,7 @@ export default function Board() {
 
   function resetAddForm() {
     setNewTitle(''); setNewType('task'); setNewPriority('medium'); setNewPoints('')
-    setNewDesc(''); setNewAC('')
+    setNewDesc(''); setNewAC(''); setNewAssigneeId('')
     setAddingToStage(null)
   }
 
@@ -197,6 +203,7 @@ export default function Board() {
       storyPoints: newPoints ? Number(newPoints) : undefined,
       description: newDesc.trim() || undefined,
       acceptanceCriteria: newAC.trim() || undefined,
+      assigneeId: newAssigneeId || undefined,
     })
     resetAddForm()
   }
@@ -361,12 +368,21 @@ export default function Board() {
                 </div>
               </div>
 
-              {/* Stage */}
-              <div>
-                <label className="block text-[10px] font-medium text-white/30 uppercase tracking-wider mb-1.5">Stage</label>
-                <select className="input w-full" value={addingToStage} onChange={e => setAddingToStage(e.target.value)}>
-                  {stages.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
-                </select>
+              {/* Stage · Assignee */}
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-[10px] font-medium text-white/30 uppercase tracking-wider mb-1.5">Stage</label>
+                  <select className="input w-full" value={addingToStage} onChange={e => setAddingToStage(e.target.value)}>
+                    {stages.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-[10px] font-medium text-white/30 uppercase tracking-wider mb-1.5">Assignee</label>
+                  <select className="input w-full" value={newAssigneeId} onChange={e => setNewAssigneeId(e.target.value)}>
+                    <option value="">Unassigned</option>
+                    {members.map(m => <option key={m.id} value={m.id}>{m.name}</option>)}
+                  </select>
+                </div>
               </div>
 
               {/* Description */}
