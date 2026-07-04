@@ -1,6 +1,8 @@
 import { useState, useEffect } from 'react'
 import { useLiveQuery } from '@electric-sql/pglite-react'
-import { Trash2, Plus, GripVertical, Check, ChevronDown, UserCircle2 } from 'lucide-react'
+import * as LucideIcons from 'lucide-react'
+import type { LucideProps } from 'lucide-react'
+import { Trash2, Plus, GripVertical, Check, ChevronDown, UserCircle2, Ban } from 'lucide-react'
 import { useProject } from '@/hooks/useProject'
 import { createStage, updateStage, deleteStage, createLabel, deleteLabel, updateProject, isProjectKeyTaken } from '@/db/queries/projects'
 import { createUser, addProjectMember, removeProjectMember } from '@/db/queries/users'
@@ -8,8 +10,7 @@ import type { DbCustomStage, DbLabel, DbUser } from '@/types/db'
 import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
 import { cn } from '@/lib/utils/cn'
-import { ProjectAvatar } from '@/components/ProjectAvatar'
-import { ProjectAppearancePicker } from '@/components/ProjectAppearancePicker'
+import { ProjectAvatar, PROJECT_ICONS } from '@/components/ProjectAvatar'
 
 const COLORS = [
   { hex: '#7c3aed', name: 'Violet' },
@@ -61,6 +62,67 @@ function ColorPicker({ value, onChange }: { value: string; onChange: (c: string)
   )
 }
 
+function IconPicker({ value, color, onChange }: { value: string | null; color: string; onChange: (i: string | null) => void }) {
+  const [open, setOpen] = useState(false)
+
+  return (
+    <div className="relative">
+      <button
+        type="button"
+        onClick={() => setOpen(v => !v)}
+        className="h-[30px] flex items-center gap-1.5 px-2.5 rounded-md bg-white/[0.04] border border-white/[0.09] hover:bg-white/[0.07] transition-all"
+      >
+        <ProjectAvatar color={color} icon={value} size="xs" />
+        <span className="text-[11px] text-white/60">Icon</span>
+        <ChevronDown size={11} className="text-white/30" />
+      </button>
+
+      {open && (
+        <>
+          <div className="fixed inset-0 z-40" onClick={() => setOpen(false)} />
+          <div className="absolute top-full left-0 mt-1 z-50 w-52 animate-fade-in shadow-2xl shadow-black/60 rounded-lg border border-white/[0.08] overflow-hidden bg-[#111113]">
+            <div className="p-1.5 max-h-52 overflow-y-auto space-y-1.5">
+              <button
+                onClick={() => { onChange(null); setOpen(false) }}
+                className={cn(
+                  'flex items-center gap-1 px-1 py-0.5 rounded text-[9px] transition-colors',
+                  !value ? 'bg-white/[0.08] text-white' : 'text-white/25 hover:text-white/55 hover:bg-white/[0.04]',
+                )}
+              >
+                <Ban size={8} strokeWidth={1.5} /> None
+              </button>
+              {Object.entries(PROJECT_ICONS).map(([category, names]) => (
+                <div key={category}>
+                  <p className="text-[7px] font-semibold text-white/20 uppercase tracking-widest mb-0.5">{category}</p>
+                  <div className="grid grid-cols-10 gap-0.5">
+                    {names.map(name => {
+                      const Icon = (LucideIcons as unknown as Record<string, React.ComponentType<LucideProps>>)[name]
+                      if (!Icon) return null
+                      return (
+                        <button
+                          key={name}
+                          onClick={() => { onChange(name); setOpen(false) }}
+                          title={name}
+                          className={cn(
+                            'w-4 h-4 rounded flex items-center justify-center transition-all hover:scale-110',
+                            value === name ? 'bg-white/[0.14] text-white' : 'text-white/35 hover:text-white/80 hover:bg-white/[0.06]',
+                          )}
+                        >
+                          <Icon size={10} strokeWidth={1.6} />
+                        </button>
+                      )
+                    })}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </>
+      )}
+    </div>
+  )
+}
+
 function Section({ title, description, children }: { title: string; description?: string; children: React.ReactNode }) {
   return (
     <div className="bg-[#141416] border border-white/[0.07] rounded-xl overflow-hidden">
@@ -88,7 +150,6 @@ export default function Settings() {
   const [projectIcon, setProjectIcon] = useState<string | null>(project?.icon ?? null)
   const [nameSaved, setNameSaved] = useState(false)
   const [keyError, setKeyError] = useState<string | null>(null)
-  const [appearanceOpen, setAppearanceOpen] = useState(false)
 
   useEffect(() => {
     if (project?.name && !projectName) setProjectName(project.name)
@@ -172,31 +233,8 @@ export default function Settings() {
         {/* Project identity */}
         <Section title="Project">
           <div className="space-y-2">
-            {/* Name row with inline avatar trigger */}
-            <div className="flex gap-2 items-center relative">
-              <div className="relative shrink-0">
-                <button
-                  type="button"
-                  onClick={() => setAppearanceOpen(v => !v)}
-                  className="block hover:opacity-80 transition-opacity"
-                  title="Change color & icon"
-                >
-                  <ProjectAvatar color={projectColor} icon={projectIcon} size="sm" />
-                </button>
-                {appearanceOpen && (
-                  <>
-                    <div className="fixed inset-0 z-40" onClick={() => setAppearanceOpen(false)} />
-                    <div className="absolute top-full left-0 mt-1.5 z-50 w-44 animate-fade-in shadow-2xl shadow-black/60">
-                      <ProjectAppearancePicker
-                        color={projectColor}
-                        icon={projectIcon}
-                        onColor={c => { setProjectColor(c) }}
-                        onIcon={i => { setProjectIcon(i) }}
-                      />
-                    </div>
-                  </>
-                )}
-              </div>
+            {/* Name row with icon + color dropdowns */}
+            <div className="flex gap-2 items-center">
               <Input
                 value={projectName}
                 onChange={e => setProjectName(e.target.value)}
@@ -204,18 +242,13 @@ export default function Settings() {
                 className="flex-1"
                 onKeyDown={e => e.key === 'Enter' && handleSaveProject()}
               />
+              <IconPicker value={projectIcon} color={projectColor} onChange={setProjectIcon} />
+              <ColorPicker value={projectColor} onChange={setProjectColor} />
               <Button size="sm" onClick={handleSaveProject} className="gap-1 shrink-0">
                 {nameSaved ? <Check size={11} /> : null}
                 {nameSaved ? 'Saved' : 'Save'}
               </Button>
             </div>
-            <textarea
-              value={projectDesc}
-              onChange={e => setProjectDesc(e.target.value)}
-              placeholder="Description — help your team know what this project is about"
-              rows={4}
-              className="w-full bg-white/[0.04] border border-white/[0.09] rounded-md px-3 py-1.5 text-xs text-white focus:outline-none focus:border-violet-500/60 focus:bg-white/[0.06] placeholder:text-white/25 transition-all resize-none"
-            />
             <div className="space-y-1">
               <div className="flex items-center gap-2">
                 <label className="text-[10px] font-medium text-white/30 uppercase tracking-wider w-24 shrink-0">Project ID</label>
@@ -230,6 +263,13 @@ export default function Settings() {
               {keyError && <p className="text-[11px] text-red-400 pl-[calc(6rem+0.5rem)]">{keyError}</p>}
               <p className="text-[10px] text-white/20 pl-[calc(6rem+0.5rem)]">Letters and numbers only · max 24 chars · must be unique</p>
             </div>
+            <textarea
+              value={projectDesc}
+              onChange={e => setProjectDesc(e.target.value)}
+              placeholder="Description — help your team know what this project is about"
+              rows={6}
+              className="w-full bg-white/[0.04] border border-white/[0.09] rounded-md px-3 py-1.5 text-xs text-white focus:outline-none focus:border-violet-500/60 focus:bg-white/[0.06] placeholder:text-white/25 transition-all resize-none"
+            />
           </div>
         </Section>
 
