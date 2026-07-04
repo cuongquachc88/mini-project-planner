@@ -83,6 +83,7 @@ export default function Settings() {
   const [projectColor, setProjectColor] = useState(project?.color ?? '#7c3aed')
   const [projectIcon, setProjectIcon] = useState<string | null>(project?.icon ?? null)
   const [nameSaved, setNameSaved] = useState(false)
+  const [appearanceOpen, setAppearanceOpen] = useState(false)
 
   useEffect(() => {
     if (project?.name && !projectName) setProjectName(project.name)
@@ -138,15 +139,32 @@ export default function Settings() {
 
         {/* Project identity */}
         <Section title="Project">
-          <div className="space-y-3">
-            <div className="flex items-center gap-3 mb-1">
-              <ProjectAvatar color={projectColor} icon={projectIcon} size="md" />
-              <div>
-                <p className="text-[13px] font-medium text-white/80">{projectName || 'Untitled'}</p>
-                <p className="text-[11px] text-white/30">{project.key}</p>
+          <div className="space-y-2">
+            {/* Name row with inline avatar trigger */}
+            <div className="flex gap-2 items-center relative">
+              <div className="relative shrink-0">
+                <button
+                  type="button"
+                  onClick={() => setAppearanceOpen(v => !v)}
+                  className="block hover:opacity-80 transition-opacity"
+                  title="Change color & icon"
+                >
+                  <ProjectAvatar color={projectColor} icon={projectIcon} size="sm" />
+                </button>
+                {appearanceOpen && (
+                  <>
+                    <div className="fixed inset-0 z-40" onClick={() => setAppearanceOpen(false)} />
+                    <div className="absolute top-full left-0 mt-1.5 z-50 w-44 animate-fade-in shadow-2xl shadow-black/60">
+                      <ProjectAppearancePicker
+                        color={projectColor}
+                        icon={projectIcon}
+                        onColor={c => { setProjectColor(c) }}
+                        onIcon={i => { setProjectIcon(i) }}
+                      />
+                    </div>
+                  </>
+                )}
               </div>
-            </div>
-            <div className="flex gap-2">
               <Input
                 value={projectName}
                 onChange={e => setProjectName(e.target.value)}
@@ -165,12 +183,6 @@ export default function Settings() {
               placeholder="Description — help your team know what this project is about"
               rows={4}
               className="w-full bg-white/[0.04] border border-white/[0.09] rounded-md px-3 py-1.5 text-xs text-white focus:outline-none focus:border-violet-500/60 focus:bg-white/[0.06] placeholder:text-white/25 transition-all resize-none"
-            />
-            <ProjectAppearancePicker
-              color={projectColor}
-              icon={projectIcon}
-              onColor={setProjectColor}
-              onIcon={setProjectIcon}
             />
           </div>
         </Section>

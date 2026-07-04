@@ -49,34 +49,34 @@ export function ProjectAppearancePicker({ color, icon, onColor, onIcon }: Props)
       </div>
 
       {tab === 'color' && (
-        <div className="p-2 grid grid-cols-7 gap-1">
+        <div className="p-1.5 grid grid-cols-7 gap-0.5">
           {COLORS.map(c => (
             <button
               key={c}
               onClick={() => onColor(c)}
-              className="w-5 h-5 rounded-md transition-all hover:scale-110 flex items-center justify-center"
+              className="w-4 h-4 rounded transition-all hover:scale-110 flex items-center justify-center"
               style={{ backgroundColor: c }}
             >
-              {color === c && <Check size={9} className="text-white" strokeWidth={3} />}
+              {color === c && <Check size={8} className="text-white" strokeWidth={3} />}
             </button>
           ))}
         </div>
       )}
 
       {tab === 'icon' && (
-        <div className="p-2 space-y-2 max-h-48 overflow-y-auto">
+        <div className="p-1.5 space-y-1.5 max-h-44 overflow-y-auto">
           <button
             onClick={() => onIcon(null)}
             className={cn(
-              'flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] transition-colors',
+              'flex items-center gap-1 px-1 py-0.5 rounded text-[9px] transition-colors',
               !icon ? 'bg-white/[0.08] text-white' : 'text-white/25 hover:text-white/55 hover:bg-white/[0.04]',
             )}
           >
-            <Ban size={9} strokeWidth={1.5} /> None
+            <Ban size={8} strokeWidth={1.5} /> None
           </button>
           {Object.entries(PROJECT_ICONS).map(([category, names]) => (
             <div key={category}>
-              <p className="text-[8px] font-semibold text-white/20 uppercase tracking-widest mb-1">{category}</p>
+              <p className="text-[7px] font-semibold text-white/20 uppercase tracking-widest mb-0.5">{category}</p>
               <div className="grid grid-cols-10 gap-0.5">
                 {names.map(name => {
                   const Icon = (LucideIcons as unknown as Record<string, React.ComponentType<LucideProps>>)[name]
@@ -87,11 +87,11 @@ export function ProjectAppearancePicker({ color, icon, onColor, onIcon }: Props)
                       onClick={() => onIcon(name)}
                       title={name}
                       className={cn(
-                        'w-5 h-5 rounded flex items-center justify-center transition-all hover:scale-110',
+                        'w-4 h-4 rounded flex items-center justify-center transition-all hover:scale-110',
                         icon === name ? 'bg-white/[0.14] text-white' : 'text-white/35 hover:text-white/80 hover:bg-white/[0.06]',
                       )}
                     >
-                      <Icon size={11} strokeWidth={1.6} />
+                      <Icon size={10} strokeWidth={1.6} />
                     </button>
                   )
                 })}
