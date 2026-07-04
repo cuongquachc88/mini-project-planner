@@ -46,7 +46,7 @@ export async function createProject(data: {
   return project
 }
 
-export async function updateProject(id: string, data: Partial<Pick<DbProject, 'name' | 'description' | 'color' | 'icon' | 'archived'>>): Promise<void> {
+export async function updateProject(id: string, data: Partial<Pick<DbProject, 'name' | 'description' | 'color' | 'icon' | 'archived' | 'key'>>): Promise<void> {
   const db = getDb()
   const sets: string[] = []
   const vals: unknown[] = []
@@ -56,9 +56,19 @@ export async function updateProject(id: string, data: Partial<Pick<DbProject, 'n
   if (data.color !== undefined) { sets.push(`color = $${i++}`); vals.push(data.color) }
   if (data.icon !== undefined) { sets.push(`icon = $${i++}`); vals.push(data.icon) }
   if (data.archived !== undefined) { sets.push(`archived = $${i++}`); vals.push(data.archived) }
+  if (data.key !== undefined) { sets.push(`key = $${i++}`); vals.push(data.key) }
   if (sets.length === 0) return
   vals.push(id)
   await db.query(`UPDATE projects SET ${sets.join(', ')} WHERE id = $${i}`, vals)
+}
+
+export async function isProjectKeyTaken(key: string, excludeId: string): Promise<boolean> {
+  const db = getDb()
+  const r = await db.query<{ count: string }>(
+    `SELECT COUNT(*) as count FROM projects WHERE key = $1 AND id != $2`,
+    [key.toUpperCase(), excludeId],
+  )
+  return parseInt(r.rows[0]?.count ?? '0', 10) > 0
 }
 
 export async function getStages(projectId: string): Promise<DbCustomStage[]> {

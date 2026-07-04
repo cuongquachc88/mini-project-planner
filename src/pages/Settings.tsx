@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { useLiveQuery } from '@electric-sql/pglite-react'
 import { Trash2, Plus, GripVertical, Check, ChevronDown, UserCircle2 } from 'lucide-react'
 import { useProject } from '@/hooks/useProject'
-import { createStage, updateStage, deleteStage, createLabel, deleteLabel, updateProject } from '@/db/queries/projects'
+import { createStage, updateStage, deleteStage, createLabel, deleteLabel, updateProject, isProjectKeyTaken } from '@/db/queries/projects'
 import { createUser, addProjectMember, removeProjectMember } from '@/db/queries/users'
 import type { DbCustomStage, DbLabel, DbUser } from '@/types/db'
 import { Button } from '@/components/ui/Button'
@@ -83,17 +83,20 @@ export default function Settings() {
   const [newMemberEmail, setNewMemberEmail] = useState('')
   const [projectName, setProjectName] = useState(project?.name ?? '')
   const [projectDesc, setProjectDesc] = useState(project?.description ?? '')
+  const [projectKey, setProjectKey] = useState(project?.key ?? '')
   const [projectColor, setProjectColor] = useState(project?.color ?? '#7c3aed')
   const [projectIcon, setProjectIcon] = useState<string | null>(project?.icon ?? null)
   const [nameSaved, setNameSaved] = useState(false)
+  const [keyError, setKeyError] = useState<string | null>(null)
   const [appearanceOpen, setAppearanceOpen] = useState(false)
 
   useEffect(() => {
     if (project?.name && !projectName) setProjectName(project.name)
     if (project?.description !== undefined && !projectDesc) setProjectDesc(project.description ?? '')
+    if (project?.key && !projectKey) setProjectKey(project.key)
     if (project?.color && !projectColor) setProjectColor(project.color)
     if (project?.icon !== undefined && !projectIcon) setProjectIcon(project.icon ?? null)
-  }, [project?.name, project?.description, project?.color, project?.icon])
+  }, [project?.name, project?.description, project?.key, project?.color, project?.icon])
 
   const stages = useLiveQuery<DbCustomStage>(
     `SELECT * FROM custom_stages WHERE project_id = $1 ORDER BY position`,
@@ -129,7 +132,15 @@ export default function Settings() {
 
   async function handleSaveProject() {
     if (!projectName.trim() || !projectId) return
-    await updateProject(projectId, { name: projectName.trim(), description: projectDesc.trim(), color: projectColor, icon: projectIcon ?? undefined })
+    setKeyError(null)
+    const cleanKey = projectKey.trim().toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 24)
+    if (!cleanKey) { setKeyError('Key cannot be empty'); return }
+    if (cleanKey !== project?.key) {
+      const taken = await isProjectKeyTaken(cleanKey, projectId)
+      if (taken) { setKeyError(`"${cleanKey}" is already used by another project`); return }
+    }
+    await updateProject(projectId, { name: projectName.trim(), description: projectDesc.trim(), color: projectColor, icon: projectIcon ?? undefined, key: cleanKey })
+    setProjectKey(cleanKey)
     setNameSaved(true)
     setTimeout(() => setNameSaved(false), 2000)
   }
@@ -205,6 +216,20 @@ export default function Settings() {
               rows={4}
               className="w-full bg-white/[0.04] border border-white/[0.09] rounded-md px-3 py-1.5 text-xs text-white focus:outline-none focus:border-violet-500/60 focus:bg-white/[0.06] placeholder:text-white/25 transition-all resize-none"
             />
+            <div className="space-y-1">
+              <div className="flex items-center gap-2">
+                <label className="text-[10px] font-medium text-white/30 uppercase tracking-wider w-24 shrink-0">Project ID</label>
+                <Input
+                  value={projectKey}
+                  onChange={e => { setProjectKey(e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 24)); setKeyError(null) }}
+                  placeholder={project.key}
+                  className="flex-1 font-mono text-xs"
+                  onKeyDown={e => e.key === 'Enter' && handleSaveProject()}
+                />
+              </div>
+              {keyError && <p className="text-[11px] text-red-400 pl-[calc(6rem+0.5rem)]">{keyError}</p>}
+              <p className="text-[10px] text-white/20 pl-[calc(6rem+0.5rem)]">Letters and numbers only · max 24 chars · must be unique</p>
+            </div>
           </div>
         </Section>
 
