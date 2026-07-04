@@ -1,0 +1,13 @@
+[      85ms] [INFO] %cDownload the React DevTools for a better development experience: https://reactjs.org/link/react-devtools font-weight:bold @ http://localhost:5174/node_modules/.vite/deps/chunk-KDCVS43I.js?v=83b63aaf:21608
+[     363ms] [LOG] [boot] uid: 7b1b4589-a25b-4566-aefa-9c114dfd2a64 | pin_hash: ✓ @ http://localhost:5174/src/main.tsx?t=1783074933464:36
+[     377ms] [LOG] [boot] uid: 7b1b4589-a25b-4566-aefa-9c114dfd2a64 | pin_hash: ✓ @ http://localhost:5174/src/main.tsx?t=1783074933464:36
+[     389ms] [LOG] [boot] user: Cuong Quach @ http://localhost:5174/src/main.tsx?t=1783074933464:39
+[     407ms] [LOG] [boot] user: Cuong Quach @ http://localhost:5174/src/main.tsx?t=1783074933464:39
+[     476ms] [VERBOSE] [DOM] Password field is not contained in a form: (More info: https://goo.gl/9p2vKq) %o @ http://localhost:5174/login:0
+[     476ms] [VERBOSE] [DOM] Password field is not contained in a form: (More info: https://goo.gl/9p2vKq) %o @ http://localhost:5174/login:0
+[     476ms] [VERBOSE] [DOM] Password field is not contained in a form: (More info: https://goo.gl/9p2vKq) %o @ http://localhost:5174/login:0
+[     476ms] [VERBOSE] [DOM] Password field is not contained in a form: (More info: https://goo.gl/9p2vKq) %o @ http://localhost:5174/login:0
+[   16310ms] [VERBOSE] [DOM] Password field is not contained in a form: (More info: https://goo.gl/9p2vKq) %o @ http://localhost:5174/login:0
+[   16310ms] [VERBOSE] [DOM] Password field is not contained in a form: (More info: https://goo.gl/9p2vKq) %o @ http://localhost:5174/login:0
+[   16310ms] [VERBOSE] [DOM] Password field is not contained in a form: (More info: https://goo.gl/9p2vKq) %o @ http://localhost:5174/login:0
+[   16310ms] [VERBOSE] [DOM] Password field is not contained in a form: (More info: https://goo.gl/9p2vKq) %o @ http://localhost:5174/login:0

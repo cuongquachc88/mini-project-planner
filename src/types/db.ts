@@ -96,11 +96,11 @@ export interface DbWorkItem {
   assignee_id: string | null
   reporter_id: string | null
   due_date: string | null
+  position: number
+  backlog_pos: number
   acceptance_criteria: string | null
   tech_notes: string | null
   wiki_page_id: string | null
-  position: number
-  backlog_pos: number
   created_at: string
   updated_at: string
 }
@@ -111,7 +111,7 @@ export interface DbWorkItemAttachment {
   filename: string
   mime_type: string
   size_bytes: number
-  data: string
+  data: string  // base64
   created_at: string
 }
 

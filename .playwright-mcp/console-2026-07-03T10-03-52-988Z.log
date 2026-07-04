@@ -1,0 +1,6 @@
+[     621ms] [INFO] %cDownload the React DevTools for a better development experience: https://reactjs.org/link/react-devtools font-weight:bold @ http://localhost:5174/node_modules/.vite/deps/chunk-KDCVS43I.js?v=83b63aaf:21608
+[    1605ms] [LOG] [DB] Applied migration v1 @ http://localhost:5174/src/db/migrations/index.ts:22
+[    1659ms] [LOG] [DB] Applied migration v2 @ http://localhost:5174/src/db/migrations/index.ts:22
+[    1711ms] [LOG] [DB] Applied migration v3 @ http://localhost:5174/src/db/migrations/index.ts:22
+[    1751ms] [LOG] [boot] uid: (none) | pin_hash: (none) @ http://localhost:5174/src/main.tsx:36
+[    1783ms] [LOG] [boot] uid: (none) | pin_hash: (none) @ http://localhost:5174/src/main.tsx:36

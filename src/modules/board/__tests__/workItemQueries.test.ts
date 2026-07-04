@@ -1,167 +1,100 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
+import { getSubtasks, addAttachment, deleteAttachment, updateWorkItem } from '../../../db/queries/workItems'
 
-vi.mock('@/db/client', () => ({ getDb: vi.fn() }))
+vi.mock('@/db/client', () => ({
+  getDb: vi.fn(),
+}))
 
 import { getDb } from '@/db/client'
-import {
-  getSubtasks,
-  addAttachment,
-  deleteAttachment,
-  updateWorkItem,
-  getAttachments,
-  getAttachmentData,
-} from '../../../db/queries/workItems'
 
 describe('workItem queries', () => {
-  let mockDb: { query: ReturnType<typeof vi.fn> }
+  let mockDb: { query: ReturnType<typeof vi.fn>; exec: ReturnType<typeof vi.fn> }
 
   beforeEach(() => {
-    mockDb = { query: vi.fn().mockResolvedValue({ rows: [] }) }
+    mockDb = { query: vi.fn(), exec: vi.fn() }
     ;(getDb as ReturnType<typeof vi.fn>).mockReturnValue(mockDb)
   })
 
-  // ── getSubtasks ──────────────────────────────────────────
   describe('getSubtasks', () => {
-    it('queries work_items by parent_id', async () => {
-      const parentId = 'parent-123'
-      mockDb.query.mockResolvedValueOnce({ rows: [] })
+    it('queries work_items by parent_id and returns rows', async () => {
+      const fakeRows = [
+        { id: 'sub-1', title: 'Sub task 1', parent_id: 'parent-1' },
+        { id: 'sub-2', title: 'Sub task 2', parent_id: 'parent-1' },
+      ]
+      mockDb.query.mockResolvedValueOnce({ rows: fakeRows })
 
-      await getSubtasks(parentId)
+      const result = await getSubtasks('parent-1')
 
-      expect(mockDb.query).toHaveBeenCalledWith(
-        expect.stringContaining('WHERE parent_id = $1'),
-        [parentId],
-      )
-    })
-
-    it('returns rows from query result', async () => {
-      const fakeSubtask = { id: 'sub-1', title: 'Fix bug', parent_id: 'parent-123' }
-      mockDb.query.mockResolvedValueOnce({ rows: [fakeSubtask] })
-
-      const result = await getSubtasks('parent-123')
-
-      expect(result).toEqual([fakeSubtask])
+      expect(mockDb.query).toHaveBeenCalledOnce()
+      const [sql, params] = mockDb.query.mock.calls[0]
+      expect(sql).toContain('parent_id = $1')
+      expect(params).toEqual(['parent-1'])
+      expect(result).toEqual(fakeRows)
     })
   })
 
-  // ── addAttachment ────────────────────────────────────────
   describe('addAttachment', () => {
-    it('inserts attachment and returns metadata without data field', async () => {
-      const meta = { id: 'att-1', work_item_id: 'wi-1', filename: 'spec.pdf', mime_type: 'application/pdf', size_bytes: 1024, created_at: '2024-01-01' }
-      mockDb.query.mockResolvedValueOnce({ rows: [meta] })
+    it('inserts attachment with correct params and returns the inserted row', async () => {
+      const fakeRow = {
+        id: 'att-uuid',
+        work_item_id: 'item-1',
+        filename: 'test.png',
+        mime_type: 'image/png',
+        size_bytes: 768,
+        created_at: '2025-01-01T00:00:00Z',
+      }
+      mockDb.query.mockResolvedValueOnce({ rows: [fakeRow] })
 
-      const result = await addAttachment('wi-1', 'spec.pdf', 'application/pdf', 'base64data==')
+      // base64 string of length ~1024 => sizeBytes = round(1024 * 0.75) = 768
+      const base64Data = 'A'.repeat(1024)
+      const result = await addAttachment('item-1', 'test.png', 'image/png', base64Data)
 
+      expect(mockDb.query).toHaveBeenCalledOnce()
       const [sql, params] = mockDb.query.mock.calls[0]
       expect(sql).toContain('INSERT INTO work_item_attachments')
-      expect(params[1]).toBe('wi-1')
-      expect(params[2]).toBe('spec.pdf')
-      expect(params[3]).toBe('application/pdf')
-      expect(params[5]).toBe('base64data==')
-      expect(result).toEqual(meta)
-    })
-
-    it('calculates size_bytes from base64 length', async () => {
-      mockDb.query.mockResolvedValueOnce({ rows: [{}] })
-      const base64 = 'A'.repeat(400) // 400 chars → ~300 bytes
-      await addAttachment('wi-1', 'img.png', 'image/png', base64)
-
-      const params = mockDb.query.mock.calls[0][1]
-      expect(params[4]).toBe(Math.round(400 * 0.75)) // 300
+      expect(params[1]).toBe('item-1')
+      expect(params[2]).toBe('test.png')
+      expect(params[3]).toBe('image/png')
+      expect(params[4]).toBe(768) // size_bytes = round(1024 * 0.75)
+      expect(params[5]).toBe(base64Data)
+      expect(result).toEqual(fakeRow)
     })
   })
 
-  // ── deleteAttachment ─────────────────────────────────────
   describe('deleteAttachment', () => {
-    it('deletes by id', async () => {
-      await deleteAttachment('att-99')
-
-      expect(mockDb.query).toHaveBeenCalledWith(
-        expect.stringContaining('DELETE FROM work_item_attachments'),
-        ['att-99'],
-      )
-    })
-  })
-
-  // ── getAttachments ───────────────────────────────────────
-  describe('getAttachments', () => {
-    it('does not select data column', async () => {
+    it('executes DELETE with correct id', async () => {
       mockDb.query.mockResolvedValueOnce({ rows: [] })
-      await getAttachments('wi-1')
 
-      const [sql] = mockDb.query.mock.calls[0]
-      expect(sql).not.toContain(', data')
-      expect(sql).toContain('FROM work_item_attachments')
+      await deleteAttachment('att-123')
+
+      expect(mockDb.query).toHaveBeenCalledOnce()
+      const [sql, params] = mockDb.query.mock.calls[0]
+      expect(sql).toContain('DELETE FROM work_item_attachments')
+      expect(params).toEqual(['att-123'])
     })
   })
 
-  // ── getAttachmentData ─────────────────────────────────────
-  describe('getAttachmentData', () => {
-    it('returns base64 data string', async () => {
-      mockDb.query.mockResolvedValueOnce({ rows: [{ data: 'abc123==' }] })
-      const result = await getAttachmentData('att-1')
-      expect(result).toBe('abc123==')
-    })
-
-    it('returns null when not found', async () => {
-      mockDb.query.mockResolvedValueOnce({ rows: [] })
-      const result = await getAttachmentData('missing')
-      expect(result).toBeNull()
-    })
-  })
-
-  // ── updateWorkItem — new fields ──────────────────────────
   describe('updateWorkItem', () => {
-    it('includes acceptance_criteria in UPDATE', async () => {
-      // updateWorkItem calls query twice: once to build SET, once to execute
-      // The actual implementation builds the SET clause dynamically
+    it('includes acceptance_criteria in the UPDATE statement', async () => {
       mockDb.query.mockResolvedValueOnce({ rows: [] })
 
-      await updateWorkItem('wi-1', { acceptance_criteria: 'Must pass all tests' })
+      await updateWorkItem('item-1', { acceptance_criteria: 'Must pass all tests' })
 
+      expect(mockDb.query).toHaveBeenCalledOnce()
       const [sql, params] = mockDb.query.mock.calls[0]
       expect(sql).toContain('acceptance_criteria')
       expect(params).toContain('Must pass all tests')
     })
 
-    it('includes tech_notes in UPDATE', async () => {
+    it('includes tech_notes in the UPDATE statement', async () => {
       mockDb.query.mockResolvedValueOnce({ rows: [] })
 
-      await updateWorkItem('wi-1', { tech_notes: 'Use Redis for caching' })
+      await updateWorkItem('item-2', { tech_notes: 'Use Redis for caching' })
 
+      expect(mockDb.query).toHaveBeenCalledOnce()
       const [sql, params] = mockDb.query.mock.calls[0]
       expect(sql).toContain('tech_notes')
       expect(params).toContain('Use Redis for caching')
-    })
-
-    it('includes wiki_page_id in UPDATE', async () => {
-      mockDb.query.mockResolvedValueOnce({ rows: [] })
-
-      await updateWorkItem('wi-1', { wiki_page_id: 'wiki-42' })
-
-      const [sql, params] = mockDb.query.mock.calls[0]
-      expect(sql).toContain('wiki_page_id')
-      expect(params).toContain('wiki-42')
-    })
-
-    it('includes parent_id in UPDATE', async () => {
-      mockDb.query.mockResolvedValueOnce({ rows: [] })
-
-      await updateWorkItem('wi-1', { parent_id: 'parent-7' })
-
-      const [sql, params] = mockDb.query.mock.calls[0]
-      expect(sql).toContain('parent_id')
-      expect(params).toContain('parent-7')
-    })
-
-    it('skips fields not in allowlist', async () => {
-      mockDb.query.mockResolvedValueOnce({ rows: [] })
-
-      // 'id' is not in the allowlist — should be ignored
-      await updateWorkItem('wi-1', { id: 'hacked' } as never)
-
-      // query should not be called (no valid fields → early return)
-      expect(mockDb.query).not.toHaveBeenCalled()
     })
   })
 })

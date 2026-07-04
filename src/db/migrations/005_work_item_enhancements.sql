@@ -8,10 +8,8 @@ CREATE TABLE IF NOT EXISTS work_item_attachments (
   filename TEXT NOT NULL,
   mime_type TEXT NOT NULL,
   size_bytes INTEGER NOT NULL,
-  data TEXT NOT NULL,
+  data TEXT NOT NULL,  -- base64 encoded
   created_at TIMESTAMPTZ DEFAULT NOW()
 );
-
 CREATE INDEX IF NOT EXISTS idx_attachments_work_item ON work_item_attachments(work_item_id);
-
 UPDATE app_meta SET value = '5' WHERE key = 'schema_version';

@@ -1,0 +1,5 @@
+[      91ms] [INFO] %cDownload the React DevTools for a better development experience: https://reactjs.org/link/react-devtools font-weight:bold @ http://localhost:5174/node_modules/.vite/deps/chunk-KDCVS43I.js?v=83b63aaf:21608
+[     425ms] [LOG] [boot] uid: (none) | pin_hash: (none) @ http://localhost:5174/src/main.tsx:36
+[     459ms] [LOG] [boot] uid: (none) | pin_hash: (none) @ http://localhost:5174/src/main.tsx:36
+[  420685ms] [VERBOSE] [DOM] Input elements should have autocomplete attributes (suggested: "new-password"): (More info: https://goo.gl/9p2vKq) %o @ http://localhost:5174/login:0
+[  420685ms] [VERBOSE] [DOM] Input elements should have autocomplete attributes (suggested: "new-password"): (More info: https://goo.gl/9p2vKq) %o @ http://localhost:5174/login:0

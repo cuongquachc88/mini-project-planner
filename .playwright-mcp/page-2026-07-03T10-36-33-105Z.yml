@@ -1,0 +1,18 @@
+- generic [ref=f4e28]:
+  - banner [ref=f4e29]:
+    - img [ref=f4e31]
+    - generic [ref=f4e34]: Planner
+  - main [ref=f4e35]:
+    - generic [ref=f4e36]:
+      - generic [ref=f4e37]:
+        - img [ref=f4e39]
+        - heading "Welcome back, Cuong" [level=1] [ref=f4e42]
+        - paragraph [ref=f4e43]: Enter your PIN to continue
+      - generic [ref=f4e44]:
+        - textbox [active] [ref=f4e45]
+        - textbox [ref=f4e46]
+        - textbox [ref=f4e47]
+        - textbox [ref=f4e48]
+      - paragraph [ref=f4e49]:
+        - img [ref=f4e50]
+        - text: PIN stored locally, never sent anywhere
