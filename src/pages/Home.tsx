@@ -120,10 +120,15 @@ function ProjectRow({ project, onOpen }: { project: DbProject; onOpen: () => voi
       {/* Color + name */}
       <div className="flex items-center gap-3 w-56 shrink-0">
         <div className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: project.color ?? '#7c3aed' }} />
-        <span className="text-[13px] font-medium text-white/80 group-hover:text-white transition-colors truncate">
-          {project.name}
-        </span>
-        <span className="text-[10px] text-white/20 font-mono ml-auto shrink-0">{project.key}</span>
+        <div className="flex-1 min-w-0">
+          <span className="text-[13px] font-medium text-white/80 group-hover:text-white transition-colors truncate block">
+            {project.name}
+          </span>
+          {project.description && (
+            <span className="text-[11px] text-white/30 truncate block leading-tight">{project.description}</span>
+          )}
+        </div>
+        <span className="text-[10px] text-white/20 font-mono shrink-0">{project.key}</span>
       </div>
 
       {/* Sprint badge */}

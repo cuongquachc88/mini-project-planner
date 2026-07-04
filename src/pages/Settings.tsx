@@ -77,11 +77,13 @@ export default function Settings() {
   const [newLabelName, setNewLabelName] = useState('')
   const [newLabelColor, setNewLabelColor] = useState(COLORS[0].hex)
   const [projectName, setProjectName] = useState(project?.name ?? '')
+  const [projectDesc, setProjectDesc] = useState(project?.description ?? '')
   const [nameSaved, setNameSaved] = useState(false)
 
   useEffect(() => {
     if (project?.name && !projectName) setProjectName(project.name)
-  }, [project?.name])
+    if (project?.description !== undefined && !projectDesc) setProjectDesc(project.description ?? '')
+  }, [project?.name, project?.description])
 
   const stages = useLiveQuery<DbCustomStage>(
     `SELECT * FROM custom_stages WHERE project_id = $1 ORDER BY position`,
@@ -112,7 +114,7 @@ export default function Settings() {
 
   async function handleSaveProjectName() {
     if (!projectName.trim() || !projectId) return
-    await updateProject(projectId, { name: projectName.trim() })
+    await updateProject(projectId, { name: projectName.trim(), description: projectDesc.trim() })
     setNameSaved(true)
     setTimeout(() => setNameSaved(false), 2000)
   }
@@ -128,20 +130,28 @@ export default function Settings() {
 
       <div className="flex-1 overflow-auto px-6 py-5 space-y-4">
 
-        {/* Project name */}
+        {/* Project name + description */}
         <Section title="Project">
-          <div className="flex gap-2">
+          <div className="space-y-2">
+            <div className="flex gap-2">
+              <Input
+                value={projectName}
+                onChange={e => setProjectName(e.target.value)}
+                placeholder="Project name"
+                className="flex-1"
+                onKeyDown={e => e.key === 'Enter' && handleSaveProjectName()}
+              />
+              <Button size="sm" onClick={handleSaveProjectName} className="gap-1 shrink-0">
+                {nameSaved ? <Check size={11} /> : null}
+                {nameSaved ? 'Saved' : 'Save'}
+              </Button>
+            </div>
             <Input
-              value={projectName}
-              onChange={e => setProjectName(e.target.value)}
-              placeholder="Project name"
-              className="flex-1"
+              value={projectDesc}
+              onChange={e => setProjectDesc(e.target.value)}
+              placeholder="Description — help your team know what this project is about"
               onKeyDown={e => e.key === 'Enter' && handleSaveProjectName()}
             />
-            <Button size="sm" onClick={handleSaveProjectName} className="gap-1 shrink-0">
-              {nameSaved ? <Check size={11} /> : null}
-              {nameSaved ? 'Saved' : 'Save'}
-            </Button>
           </div>
         </Section>
 
