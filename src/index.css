@@ -27,6 +27,10 @@
       focus:outline-none focus:border-violet-500/60 focus:bg-white/[0.06]
       placeholder:text-white/25 transition-all;
   }
+  .meta-select {
+    @apply w-full bg-transparent text-[11px] text-white/60 focus:outline-none cursor-pointer
+      hover:text-white/80 transition-colors appearance-none;
+  }
   .btn-ghost {
     @apply px-3 py-1.5 rounded-lg text-xs text-white/50 hover:text-white hover:bg-white/[0.06] transition-all;
   }
