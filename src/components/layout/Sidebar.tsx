@@ -68,7 +68,7 @@ export function Sidebar() {
       )}>
         {!collapsed && (
           <button
-            onClick={() => navigate('/')}
+            onClick={() => navigate('/ui')}
             className="flex items-center gap-2 text-white/40 hover:text-white/80 transition-colors text-[13px]"
           >
             <Home size={14} strokeWidth={1.8} />

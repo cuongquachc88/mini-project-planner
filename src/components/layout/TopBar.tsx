@@ -87,7 +87,7 @@ export function TopBar() {
 
   function handleLogout() {
     setCurrentUser(null)
-    navigate('/')
+    navigate('/ui')
   }
 
   return (

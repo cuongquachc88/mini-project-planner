@@ -61,7 +61,7 @@ export function ProjectSwitcher() {
 
             <div className="border-t border-white/[0.06] p-1">
               <button
-                onClick={() => { navigate('/'); setOpen(false) }}
+                onClick={() => { navigate('/ui'); setOpen(false) }}
                 className="w-full flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-[12px] text-white/40 hover:text-white hover:bg-white/[0.04] transition-colors"
               >
                 <LayoutGrid size={12} />All projects
