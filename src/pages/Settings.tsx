@@ -234,7 +234,8 @@ export default function Settings() {
         <Section title="Project">
           <div className="space-y-2">
             {/* Name row with icon + color dropdowns */}
-            <div className="flex gap-2 items-center">
+            <div className="flex items-center gap-2">
+              <label className="text-[10px] font-medium text-white/30 uppercase tracking-wider w-24 shrink-0">Name</label>
               <Input
                 value={projectName}
                 onChange={e => setProjectName(e.target.value)}
