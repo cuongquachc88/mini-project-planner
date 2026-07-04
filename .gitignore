@@ -5,3 +5,6 @@ test-results/
 playwright-report/
 *.local
 .env
+.DS_Store
+.playwright-mcp/
+.claude/worktrees/
