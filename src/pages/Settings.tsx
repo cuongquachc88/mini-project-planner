@@ -1,9 +1,10 @@
 import { useState, useEffect } from 'react'
 import { useLiveQuery } from '@electric-sql/pglite-react'
-import { Trash2, Plus, GripVertical, Check, ChevronDown } from 'lucide-react'
+import { Trash2, Plus, GripVertical, Check, ChevronDown, UserCircle2 } from 'lucide-react'
 import { useProject } from '@/hooks/useProject'
 import { createStage, updateStage, deleteStage, createLabel, deleteLabel, updateProject } from '@/db/queries/projects'
-import type { DbCustomStage, DbLabel } from '@/types/db'
+import { createUser, addProjectMember, removeProjectMember } from '@/db/queries/users'
+import type { DbCustomStage, DbLabel, DbUser } from '@/types/db'
 import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
 import { cn } from '@/lib/utils/cn'
@@ -78,6 +79,8 @@ export default function Settings() {
   const [newStageColor, setNewStageColor] = useState(COLORS[0].hex)
   const [newLabelName, setNewLabelName] = useState('')
   const [newLabelColor, setNewLabelColor] = useState(COLORS[0].hex)
+  const [newMemberName, setNewMemberName] = useState('')
+  const [newMemberEmail, setNewMemberEmail] = useState('')
   const [projectName, setProjectName] = useState(project?.name ?? '')
   const [projectDesc, setProjectDesc] = useState(project?.description ?? '')
   const [projectColor, setProjectColor] = useState(project?.color ?? '#7c3aed')
@@ -99,6 +102,11 @@ export default function Settings() {
 
   const labels = useLiveQuery<DbLabel>(
     `SELECT * FROM labels WHERE project_id = $1 ORDER BY name`,
+    [projectId ?? ''],
+  )?.rows ?? []
+
+  const members = useLiveQuery<DbUser>(
+    `SELECT u.* FROM users u JOIN project_members pm ON pm.user_id = u.id WHERE pm.project_id = $1 ORDER BY u.name`,
     [projectId ?? ''],
   )?.rows ?? []
 
@@ -124,6 +132,19 @@ export default function Settings() {
     await updateProject(projectId, { name: projectName.trim(), description: projectDesc.trim(), color: projectColor, icon: projectIcon ?? undefined })
     setNameSaved(true)
     setTimeout(() => setNameSaved(false), 2000)
+  }
+
+  async function handleAddMember() {
+    if (!newMemberName.trim() || !newMemberEmail.trim() || !projectId) return
+    const user = await createUser({ name: newMemberName.trim(), email: newMemberEmail.trim().toLowerCase() })
+    await addProjectMember(projectId, user.id)
+    setNewMemberName('')
+    setNewMemberEmail('')
+  }
+
+  async function handleRemoveMember(userId: string) {
+    if (!projectId) return
+    await removeProjectMember(projectId, userId)
   }
 
   if (!project) return <div className="p-8 text-white/30 text-[13px]">Loading…</div>
@@ -268,6 +289,60 @@ export default function Settings() {
             />
             <ColorPicker value={newLabelColor} onChange={setNewLabelColor} />
             <Button size="sm" onClick={handleAddLabel} className="gap-1 shrink-0">
+              <Plus size={11} strokeWidth={2.5} />Add
+            </Button>
+          </div>
+        </Section>
+
+        {/* Team / Teammates */}
+        <Section title="Team" description="project members">
+          <div className="space-y-px mb-4">
+            {members.length === 0 && (
+              <p className="text-[12px] text-white/20 py-4 text-center">No members yet — add teammates below</p>
+            )}
+            {members.map(member => (
+              <div key={member.id} className="flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-white/[0.03] group transition-colors">
+                <div className="w-6 h-6 rounded-full bg-violet-500/20 flex items-center justify-center shrink-0">
+                  <UserCircle2 size={14} className="text-violet-400" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-[13px] text-white/80 truncate">{member.name}</p>
+                  <p className="text-[11px] text-white/30 truncate">{member.email}</p>
+                </div>
+                <span className={cn(
+                  'text-[10px] px-2 py-0.5 rounded-md border shrink-0',
+                  member.role === 'admin'
+                    ? 'bg-violet-500/10 text-violet-400 border-violet-500/20'
+                    : 'text-white/25 border-white/[0.08]',
+                )}>
+                  {member.role}
+                </span>
+                <button
+                  onClick={() => handleRemoveMember(member.id)}
+                  className="w-6 h-6 flex items-center justify-center rounded text-white/15 hover:text-red-400 hover:bg-red-500/[0.08] opacity-0 group-hover:opacity-100 transition-all shrink-0"
+                >
+                  <Trash2 size={12} />
+                </button>
+              </div>
+            ))}
+          </div>
+
+          <div className="flex gap-2 items-center pt-3 border-t border-white/[0.05]">
+            <Input
+              value={newMemberName}
+              onChange={e => setNewMemberName(e.target.value)}
+              placeholder="Name…"
+              className="flex-1"
+              onKeyDown={e => e.key === 'Enter' && handleAddMember()}
+            />
+            <Input
+              value={newMemberEmail}
+              onChange={e => setNewMemberEmail(e.target.value)}
+              placeholder="Email…"
+              className="flex-1"
+              onKeyDown={e => e.key === 'Enter' && handleAddMember()}
+            />
+            <Button size="sm" onClick={handleAddMember} className="gap-1 shrink-0">
               <Plus size={11} strokeWidth={2.5} />Add
             </Button>
           </div>
