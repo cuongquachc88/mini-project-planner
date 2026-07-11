@@ -126,7 +126,7 @@ export default function Profile() {
         {/* Header */}
         <div className="mb-6">
           <button
-            onClick={() => navigate(-1)}
+            onClick={() => navigate('/ui')}
             className="flex items-center gap-1.5 text-[12px] text-white/30 hover:text-white/60 transition-colors mb-4"
           >
             <ArrowLeft size={13} strokeWidth={1.8} />
