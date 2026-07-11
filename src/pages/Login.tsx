@@ -49,40 +49,33 @@ export default function Login() {
     }
   }, [mode])
 
-  function handleDigit(
+  function handlePinKeyDown(
     idx: number,
-    val: string,
+    e: React.KeyboardEvent<HTMLInputElement>,
     arr: string[],
     setArr: (v: string[]) => void,
     refs: React.MutableRefObject<(HTMLInputElement | null)[]>,
     onComplete?: (pin: string) => void,
   ) {
-    const digit = val.replace(/\D/g, '').slice(-1)
-    const next = [...arr]
-    next[idx] = digit
-    setArr(next)
-    setPinError(false)
-    if (digit && idx < 5) refs.current[idx + 1]?.focus()
-    if (onComplete && next.every(d => d !== '')) onComplete(next.join(''))
-  }
-
-  function handleKeyDown(
-    idx: number,
-    e: React.KeyboardEvent,
-    arr: string[],
-    setArr: (v: string[]) => void,
-    refs: React.MutableRefObject<(HTMLInputElement | null)[]>,
-  ) {
     if (e.key === 'Backspace') {
+      e.preventDefault()
       if (arr[idx]) {
-        const next = [...arr]
-        next[idx] = ''
-        setArr(next)
+        const next = [...arr]; next[idx] = ''; setArr(next)
       } else if (idx > 0) {
-        const next = [...arr]
-        next[idx - 1] = ''
-        setArr(next)
+        const next = [...arr]; next[idx - 1] = ''; setArr(next)
         refs.current[idx - 1]?.focus()
+      }
+      return
+    }
+    if (e.key >= '0' && e.key <= '9') {
+      e.preventDefault()
+      const next = [...arr]; next[idx] = e.key; setArr(next)
+      setPinError(false)
+      if (idx < 5) {
+        refs.current[idx + 1]?.focus()
+      } else if (onComplete) {
+        const pin = [...next].join('')
+        if (next.every(d => d !== '')) onComplete(pin)
       }
     }
   }
@@ -187,11 +180,11 @@ export default function Login() {
             autoComplete="off"
             maxLength={1}
             value={d}
-            onChange={e => handleDigit(i, e.target.value, digits, setDigits, inputsRef, handleUnlock)}
-            onKeyDown={e => handleKeyDown(i, e, digits, setDigits, inputsRef)}
+            onChange={() => {}}
+            onKeyDown={e => handlePinKeyDown(i, e, digits, setDigits, inputsRef, handleUnlock)}
             className={[
               'w-12 h-12 text-center text-xl font-bold rounded-xl border-2 transition-all outline-none bg-white/[0.05] text-white caret-transparent',
-              pinError ? 'border-red-500 bg-red-500/10' : d ? 'border-violet-500 bg-violet-500/10' : 'border-white/[0.12] focus:border-violet-500',
+              pinError ? 'border-red-500 bg-red-500/10' : d ? 'border-violet-500 bg-violet-500/10' : 'border-white/[0.12] focus:border-violet-400/50',
             ].join(' ')}
           />
         ))}
@@ -227,11 +220,11 @@ export default function Login() {
             autoComplete="off"
             maxLength={1}
             value={d}
-            onChange={e => handleDigit(i, e.target.value, arr, setArr, refs, onComplete)}
-            onKeyDown={e => handleKeyDown(i, e, arr, setArr, refs)}
+            onChange={() => {}}
+            onKeyDown={e => handlePinKeyDown(i, e, arr, setArr, refs, onComplete)}
             className={[
               'w-10 h-10 text-center text-lg font-bold rounded-lg border-2 transition-all outline-none bg-white/[0.05] text-white caret-transparent',
-              d ? 'border-violet-500 bg-violet-500/10' : 'border-white/[0.12] focus:border-violet-500',
+              d ? 'border-violet-500 bg-violet-500/10' : 'border-white/[0.12] focus:border-violet-400/50',
             ].join(' ')}
           />
         ))}

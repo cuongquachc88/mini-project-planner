@@ -19,45 +19,36 @@ export function PinLock({ pinHash, onUnlock, userName }: Props) {
     inputsRef.current[0]?.focus()
   }, [])
 
-  async function handleInput(idx: number, val: string) {
-    const digit = val.replace(/\D/g, '').slice(-1)
-    const next = [...digits]
-    next[idx] = digit
-    setDigits(next)
-    setError(false)
-
-    if (digit && idx < 5) {
-      inputsRef.current[idx + 1]?.focus()
-    }
-
-    if (next.every((d) => d !== '')) {
-      const pin = next.join('')
-      const ok = await verifyPin(pin, pinHash)
-      if (ok) {
-        onUnlock()
-      } else {
-        setShaking(true)
-        setError(true)
-        setTimeout(() => {
-          setDigits(['', '', '', '', '', ''])
-          setShaking(false)
-          inputsRef.current[0]?.focus()
-        }, 600)
-      }
-    }
-  }
-
-  function handleKeyDown(idx: number, e: React.KeyboardEvent) {
+  async function handleKeyDown(idx: number, e: React.KeyboardEvent<HTMLInputElement>) {
     if (e.key === 'Backspace') {
+      e.preventDefault()
       if (digits[idx]) {
-        const next = [...digits]
-        next[idx] = ''
-        setDigits(next)
+        const next = [...digits]; next[idx] = ''; setDigits(next)
       } else if (idx > 0) {
-        const next = [...digits]
-        next[idx - 1] = ''
-        setDigits(next)
+        const next = [...digits]; next[idx - 1] = ''; setDigits(next)
         inputsRef.current[idx - 1]?.focus()
+      }
+      return
+    }
+    if (e.key >= '0' && e.key <= '9') {
+      e.preventDefault()
+      const next = [...digits]; next[idx] = e.key; setDigits(next)
+      setError(false)
+      if (idx < 5) {
+        inputsRef.current[idx + 1]?.focus()
+      } else if (next.every(d => d !== '')) {
+        const ok = await verifyPin(next.join(''), pinHash)
+        if (ok) {
+          onUnlock()
+        } else {
+          setShaking(true)
+          setError(true)
+          setTimeout(() => {
+            setDigits(['', '', '', '', '', ''])
+            setShaking(false)
+            inputsRef.current[0]?.focus()
+          }, 600)
+        }
       }
     }
   }
@@ -83,16 +74,16 @@ export function PinLock({ pinHash, onUnlock, userName }: Props) {
               inputMode="numeric"
               maxLength={1}
               value={d}
-              onChange={(e) => handleInput(i, e.target.value)}
+              onChange={() => {}}
               onKeyDown={(e) => handleKeyDown(i, e)}
               className={cn(
                 'w-14 h-14 text-center text-xl font-bold rounded-xl border-2 transition-all outline-none',
-                'bg-white/[0.05] text-white',
+                'bg-white/[0.05] text-white caret-transparent',
                 error
                   ? 'border-red-500 bg-red-500/10'
                   : d
                   ? 'border-violet-500 bg-violet-500/10'
-                  : 'border-white/[0.12] focus:border-violet-500',
+                  : 'border-white/[0.12] focus:border-violet-400/50',
               )}
             />
           ))}
