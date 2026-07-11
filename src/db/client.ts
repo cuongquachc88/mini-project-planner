@@ -42,29 +42,33 @@ export async function exportDbAsJson(): Promise<DbSnapshot> {
   return snapshot
 }
 
+const IDENTIFIER_RE = /^[a-zA-Z_][a-zA-Z0-9_]*$/
+
+function safeId(name: string): string {
+  if (!IDENTIFIER_RE.test(name)) throw new Error(`Unsafe SQL identifier: ${name}`)
+  return `"${name}"`
+}
+
 export async function mergeAndApplySnapshot(remote: DbSnapshot): Promise<void> {
   const db = getDb()
   const local = await exportDbAsJson()
 
-  // For each table, merge rows using last-write-wins on updated_at
   for (const table of SYNC_TABLES) {
     const localRows = local[table] ?? []
-    const remoteRows = remote[table] ?? []
+    const remoteRows = (remote[table] ?? []).filter(
+      r => r && typeof r === 'object' && typeof r.id === 'string'
+    )
 
+    // Build merged map: local rows first, then overwrite with newer remote rows
     const merged = new Map<string, Record<string, unknown>>()
-
-    for (const row of localRows) {
-      merged.set(row.id as string, row)
-    }
+    for (const row of localRows) merged.set(row.id as string, row)
 
     for (const row of remoteRows) {
       const id = row.id as string
       const existing = merged.get(id)
       if (!existing) {
-        // Row only in remote → take it
         merged.set(id, row)
       } else {
-        // Conflict: take the newer one by updated_at
         const localTs = existing.updated_at ? new Date(existing.updated_at as string).getTime() : 0
         const remoteTs = row.updated_at ? new Date(row.updated_at as string).getTime() : 0
         if (remoteTs > localTs) merged.set(id, row)
@@ -74,9 +78,17 @@ export async function mergeAndApplySnapshot(remote: DbSnapshot): Promise<void> {
     const mergedRows = Array.from(merged.values())
     if (mergedRows.length === 0) continue
 
-    const cols = Object.keys(mergedRows[0])
-    const colList = cols.join(', ')
-    const updateSet = cols.filter(c => c !== 'id').map(c => `${c} = EXCLUDED.${c}`).join(', ')
+    // Use column names from the local export (trusted schema), not from remote payload
+    const cols = Object.keys(local[table]?.[0] ?? mergedRows[0]).filter(c =>
+      IDENTIFIER_RE.test(c)
+    )
+    if (cols.length === 0) continue
+
+    const colList = cols.map(safeId).join(', ')
+    const updateSet = cols
+      .filter(c => c !== 'id')
+      .map(c => `${safeId(c)} = EXCLUDED.${safeId(c)}`)
+      .join(', ')
 
     for (const row of mergedRows) {
       const values = cols.map(c => {
@@ -87,7 +99,7 @@ export async function mergeAndApplySnapshot(remote: DbSnapshot): Promise<void> {
         return `'${String(v).replace(/'/g, "''")}'`
       })
       await db.exec(
-        `INSERT INTO ${table} (${colList}) VALUES (${values.join(', ')}) ON CONFLICT (id) DO UPDATE SET ${updateSet}`
+        `INSERT INTO ${safeId(table)} (${colList}) VALUES (${values.join(', ')}) ON CONFLICT (id) DO UPDATE SET ${updateSet}`
       )
     }
   }

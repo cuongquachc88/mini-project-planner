@@ -10,8 +10,13 @@ async function fetchRemoteSnapshot(): Promise<{ snapshot: DbSnapshot; fileId: st
   const file = storedId ? { id: storedId } : await findFile(BACKUP_FILENAME)
   if (!file) return null
   const text = await downloadFile(file.id)
-  const snapshot = JSON.parse(text) as DbSnapshot
-  return { snapshot, fileId: file.id }
+  try {
+    const snapshot = JSON.parse(text) as DbSnapshot
+    return { snapshot, fileId: file.id }
+  } catch {
+    // Old SQL backup on Drive — treat as no remote snapshot so we overwrite with JSON
+    return null
+  }
 }
 
 // Push local → Drive (merge first so Drive always has the union)
