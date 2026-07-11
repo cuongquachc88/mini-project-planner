@@ -96,7 +96,13 @@ export async function mergeAndApplySnapshot(remote: DbSnapshot): Promise<void> {
         if (v === null || v === undefined) return 'NULL'
         if (typeof v === 'boolean') return v ? 'TRUE' : 'FALSE'
         if (typeof v === 'number') return String(v)
-        return `'${String(v).replace(/'/g, "''")}'`
+        const s = String(v)
+        // Normalize timestamps to UTC ISO so PGlite always gets a recognized format
+        if (/^\d{4}-\d{2}-\d{2}[T ]\d{2}:\d{2}/.test(s)) {
+          const d = new Date(s)
+          if (!isNaN(d.getTime())) return `'${d.toISOString()}'`
+        }
+        return `'${s.replace(/'/g, "''")}'`
       })
       await db.exec(
         `INSERT INTO ${safeId(table)} (${colList}) VALUES (${values.join(', ')}) ON CONFLICT (id) DO UPDATE SET ${updateSet}`
