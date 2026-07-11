@@ -69,9 +69,34 @@ function safeId(name: string): string {
   return `"${name}"`
 }
 
+// FK columns that reference users(id) and need remapping when a remote user
+// was deduped by email (remote id → local id)
+const USER_FK_COLS: Record<string, string[]> = {
+  projects:       ['owner_id'],
+  project_members:['user_id'],
+  work_items:     ['assignee_id', 'reporter_id'],
+  comments:       ['author_id'],
+  meeting_notes:  ['author_id'],
+  decisions:      ['decided_by'],
+  retrospectives: ['facilitated_by'],
+}
+
 export async function mergeAndApplySnapshot(remote: DbSnapshot): Promise<void> {
   const db = getDb()
   const local = await exportDbAsJson()
+
+  // Build remoteId → localId map for users that were deduped by email
+  // so FK references in other tables can be remapped before insert
+  const remoteUserIdRemap = new Map<string, string>()
+  const localUsersByEmail = new Map<string, string>(
+    (local['users'] ?? []).map(r => [r.email as string, r.id as string])
+  )
+  for (const row of (remote['users'] ?? [])) {
+    const localId = localUsersByEmail.get(row.email as string)
+    if (localId && localId !== row.id) {
+      remoteUserIdRemap.set(row.id as string, localId)
+    }
+  }
 
   for (const table of SYNC_TABLES) {
     const localRows = local[table] ?? []
@@ -91,7 +116,21 @@ export async function mergeAndApplySnapshot(remote: DbSnapshot): Promise<void> {
       localUniqueByCol[col] = new Set(localRows.map(r => String(r[col] ?? '')))
     }
 
-    for (const row of remoteRows) {
+    for (const remoteRow of remoteRows) {
+      // Remap any user FK columns so they point to the local user id
+      let row = remoteRow
+      const fkCols = USER_FK_COLS[table]
+      if (fkCols && remoteUserIdRemap.size > 0) {
+        const remapped: Record<string, unknown> = { ...row }
+        for (const col of fkCols) {
+          const v = remapped[col]
+          if (typeof v === 'string' && remoteUserIdRemap.has(v)) {
+            remapped[col] = remoteUserIdRemap.get(v)
+          }
+        }
+        row = remapped
+      }
+
       // Skip remote row if any of its unique-column values already exist locally
       // under a different primary key — inserting it would violate the constraint
       const blocked = (IMMUTABLE_COLS[table] ?? []).some(col => {
