@@ -22,6 +22,18 @@ export function getDb(): PGliteWithLive {
   return _db
 }
 
+// Per-table primary key columns (composite where needed)
+const TABLE_PK: Record<string, string[]> = {
+  project_members:  ['project_id', 'user_id'],
+  work_item_labels: ['work_item_id', 'label_id'],
+}
+function pkCols(table: string): string[] {
+  return TABLE_PK[table] ?? ['id']
+}
+function rowKey(table: string, row: Record<string, unknown>): string {
+  return pkCols(table).map(k => String(row[k] ?? '')).join('|')
+}
+
 // Tables in dependency order (parents before children for export, children first for delete)
 const SYNC_TABLES = [
   'users', 'projects', 'project_members', 'custom_stages', 'labels',
@@ -56,22 +68,22 @@ export async function mergeAndApplySnapshot(remote: DbSnapshot): Promise<void> {
   for (const table of SYNC_TABLES) {
     const localRows = local[table] ?? []
     const remoteRows = (remote[table] ?? []).filter(
-      r => r && typeof r === 'object' && typeof r.id === 'string'
+      r => r && typeof r === 'object' && pkCols(table).every(k => r[k] != null)
     )
 
     // Build merged map: local rows first, then overwrite with newer remote rows
     const merged = new Map<string, Record<string, unknown>>()
-    for (const row of localRows) merged.set(row.id as string, row)
+    for (const row of localRows) merged.set(rowKey(table, row), row)
 
     for (const row of remoteRows) {
-      const id = row.id as string
-      const existing = merged.get(id)
+      const key = rowKey(table, row)
+      const existing = merged.get(key)
       if (!existing) {
-        merged.set(id, row)
+        merged.set(key, row)
       } else {
         const localTs = existing.updated_at ? new Date(existing.updated_at as string | Date).getTime() : 0
         const remoteTs = row.updated_at ? new Date(row.updated_at as string | Date).getTime() : 0
-        if (remoteTs > localTs) merged.set(id, row)
+        if (remoteTs > localTs) merged.set(key, row)
       }
     }
 
@@ -84,9 +96,11 @@ export async function mergeAndApplySnapshot(remote: DbSnapshot): Promise<void> {
     )
     if (cols.length === 0) continue
 
+    const pk = pkCols(table)
     const colList = cols.map(safeId).join(', ')
+    const conflictCols = pk.map(safeId).join(', ')
     const updateSet = cols
-      .filter(c => c !== 'id')
+      .filter(c => !pk.includes(c))
       .map(c => `${safeId(c)} = EXCLUDED.${safeId(c)}`)
       .join(', ')
 
@@ -106,9 +120,10 @@ export async function mergeAndApplySnapshot(remote: DbSnapshot): Promise<void> {
         }
         return `'${s.replace(/'/g, "''")}'`
       })
-      await db.exec(
-        `INSERT INTO ${safeId(table)} (${colList}) VALUES (${values.join(', ')}) ON CONFLICT (id) DO UPDATE SET ${updateSet}`
-      )
+      const stmt = updateSet
+        ? `INSERT INTO ${safeId(table)} (${colList}) VALUES (${values.join(', ')}) ON CONFLICT (${conflictCols}) DO UPDATE SET ${updateSet}`
+        : `INSERT INTO ${safeId(table)} (${colList}) VALUES (${values.join(', ')}) ON CONFLICT DO NOTHING`
+      await db.exec(stmt)
     }
   }
 }
