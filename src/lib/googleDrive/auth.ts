@@ -1,4 +1,5 @@
 const CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID as string | undefined
+const CLIENT_SECRET = import.meta.env.VITE_GOOGLE_CLIENT_SECRET as string | undefined
 const REDIRECT_URI = `${window.location.origin}/oauth-callback`
 const SCOPE = 'https://www.googleapis.com/auth/drive.appdata'
 
@@ -85,6 +86,7 @@ export async function handleOAuthCallback(code: string): Promise<void> {
     headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
     body: new URLSearchParams({
       client_id: CLIENT_ID,
+      ...(CLIENT_SECRET ? { client_secret: CLIENT_SECRET } : {}),
       code,
       code_verifier: verifier,
       grant_type: 'authorization_code',
