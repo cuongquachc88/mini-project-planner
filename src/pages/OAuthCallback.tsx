@@ -28,7 +28,8 @@ export default function OAuthCallback() {
         setDriveConnected(true)
         const returnTo = localStorage.getItem('drive_oauth_return') || '/profile'
         localStorage.removeItem('drive_oauth_return')
-        navigate(returnTo, { replace: true })
+        // Force full reload so app boots fresh with token already in localStorage
+        window.location.replace(returnTo)
       })
       .catch((e: Error) => {
         setError(e.message)
