@@ -75,6 +75,10 @@ export function PinLock({ pinHash, onUnlock, userName }: Props) {
               maxLength={1}
               value={d}
               onChange={() => {}}
+              onClick={() => {
+                const first = digits.findIndex(d => d === '')
+                inputsRef.current[first === -1 ? 5 : first]?.focus()
+              }}
               onKeyDown={(e) => handleKeyDown(i, e)}
               className={cn(
                 'w-14 h-14 text-center text-xl font-bold rounded-xl border-2 transition-all outline-none',

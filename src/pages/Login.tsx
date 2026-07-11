@@ -49,6 +49,14 @@ export default function Login() {
     }
   }, [mode])
 
+  function focusFirstEmpty(
+    arr: string[],
+    refs: React.MutableRefObject<(HTMLInputElement | null)[]>,
+  ) {
+    const first = arr.findIndex(d => d === '')
+    refs.current[first === -1 ? 5 : first]?.focus()
+  }
+
   function handlePinKeyDown(
     idx: number,
     e: React.KeyboardEvent<HTMLInputElement>,
@@ -181,6 +189,7 @@ export default function Login() {
             maxLength={1}
             value={d}
             onChange={() => {}}
+            onClick={() => focusFirstEmpty(digits, inputsRef)}
             onKeyDown={e => handlePinKeyDown(i, e, digits, setDigits, inputsRef, handleUnlock)}
             className={[
               'w-12 h-12 text-center text-xl font-bold rounded-xl border-2 transition-all outline-none bg-white/[0.05] text-white caret-transparent',
@@ -221,6 +230,7 @@ export default function Login() {
             maxLength={1}
             value={d}
             onChange={() => {}}
+            onClick={() => focusFirstEmpty(arr, refs)}
             onKeyDown={e => handlePinKeyDown(i, e, arr, setArr, refs, onComplete)}
             className={[
               'w-10 h-10 text-center text-lg font-bold rounded-lg border-2 transition-all outline-none bg-white/[0.05] text-white caret-transparent',
