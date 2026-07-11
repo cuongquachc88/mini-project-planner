@@ -83,7 +83,29 @@ export async function mergeAndApplySnapshot(remote: DbSnapshot): Promise<void> {
     const merged = new Map<string, Record<string, unknown>>()
     for (const row of localRows) merged.set(rowKey(table, row), row)
 
+    // For tables with secondary unique constraints, build sets of existing
+    // unique values so remote rows that would violate them are skipped
+    // (local row wins — same entity registered under a different id on another device)
+    const localUniqueByCol: Record<string, Set<string>> = {}
+    for (const col of (IMMUTABLE_COLS[table] ?? [])) {
+      localUniqueByCol[col] = new Set(localRows.map(r => String(r[col] ?? '')))
+    }
+
     for (const row of remoteRows) {
+      // Skip remote row if any of its unique-column values already exist locally
+      // under a different primary key — inserting it would violate the constraint
+      const blocked = (IMMUTABLE_COLS[table] ?? []).some(col => {
+        const val = String(row[col] ?? '')
+        const localHas = localUniqueByCol[col]?.has(val)
+        if (!localHas) return false
+        // Only block if it's a *different* PK (same PK = normal upsert, fine)
+        const sameKey = pkCols(table).every(k => row[k] === localRows.find(
+          lr => String(lr[col] ?? '') === val
+        )?.[k])
+        return !sameKey
+      })
+      if (blocked) continue
+
       const key = rowKey(table, row)
       const existing = merged.get(key)
       if (!existing) {
