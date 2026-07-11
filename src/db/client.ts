@@ -34,6 +34,14 @@ function rowKey(table: string, row: Record<string, unknown>): string {
   return pkCols(table).map(k => String(row[k] ?? '')).join('|')
 }
 
+// Columns that must be excluded from DO UPDATE SET because they have
+// secondary UNIQUE constraints — updating them risks a uniqueness conflict
+// on a different row even when the PK conflict is resolved correctly.
+const IMMUTABLE_COLS: Record<string, string[]> = {
+  users:    ['email'],
+  projects: ['key'],
+}
+
 // Tables in dependency order (parents before children for export, children first for delete)
 const SYNC_TABLES = [
   'users', 'projects', 'project_members', 'custom_stages', 'labels',
@@ -97,10 +105,11 @@ export async function mergeAndApplySnapshot(remote: DbSnapshot): Promise<void> {
     if (cols.length === 0) continue
 
     const pk = pkCols(table)
+    const immutable = new Set([...pk, ...(IMMUTABLE_COLS[table] ?? [])])
     const colList = cols.map(safeId).join(', ')
     const conflictCols = pk.map(safeId).join(', ')
     const updateSet = cols
-      .filter(c => !pk.includes(c))
+      .filter(c => !immutable.has(c))
       .map(c => `${safeId(c)} = EXCLUDED.${safeId(c)}`)
       .join(', ')
 
