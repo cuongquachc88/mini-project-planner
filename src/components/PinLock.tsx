@@ -9,7 +9,7 @@ interface Props {
 }
 
 export function PinLock({ pinHash, onUnlock, userName }: Props) {
-  const [digits, setDigits] = useState(['', '', '', ''])
+  const [digits, setDigits] = useState(['', '', '', '', '', ''])
   const [error, setError] = useState(false)
   const [show, setShow] = useState(false)
   const [shaking, setShaking] = useState(false)
@@ -26,7 +26,7 @@ export function PinLock({ pinHash, onUnlock, userName }: Props) {
     setDigits(next)
     setError(false)
 
-    if (val && idx < 3) {
+    if (val && idx < 5) {
       inputsRef.current[idx + 1]?.focus()
     }
 
@@ -39,7 +39,7 @@ export function PinLock({ pinHash, onUnlock, userName }: Props) {
         setShaking(true)
         setError(true)
         setTimeout(() => {
-          setDigits(['', '', '', ''])
+          setDigits(['', '', '', '', '', ''])
           setShaking(false)
           inputsRef.current[0]?.focus()
         }, 600)

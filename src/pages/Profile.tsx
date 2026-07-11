@@ -90,7 +90,7 @@ export default function Profile() {
 
   async function handleSetPin() {
     setPinError('')
-    if (pinNew.length < 4) { setPinError('PIN must be at least 4 digits'); return }
+    if (pinNew.length !== 6) { setPinError('PIN must be exactly 6 digits'); return }
     if (!/^\d+$/.test(pinNew)) { setPinError('Digits only'); return }
     if (pinNew !== pinConfirm) { setPinError('PINs do not match'); return }
     if (pinMode === 'change' && hasPinHash) {
@@ -222,7 +222,7 @@ export default function Profile() {
                     <Input
                       type={showPin ? 'text' : 'password'}
                       inputMode="numeric"
-                      maxLength={8}
+                      maxLength={6}
                       value={pinCurrent}
                       onChange={(e) => setPinCurrent(e.target.value.replace(/\D/g, ''))}
                       placeholder="••••"
@@ -238,12 +238,12 @@ export default function Profile() {
               {pinMode !== 'remove' && (
                 <>
                   <LabelRow label={pinMode === 'set' ? 'New PIN' : 'New PIN'}>
-                    <Input type={showPin ? 'text' : 'password'} inputMode="numeric" maxLength={8}
+                    <Input type={showPin ? 'text' : 'password'} inputMode="numeric" maxLength={6}
                       value={pinNew} onChange={(e) => setPinNew(e.target.value.replace(/\D/g, ''))}
-                      placeholder="4–8 digits" className="font-mono tracking-widest" />
+                      placeholder="6 digits" className="font-mono tracking-widest" />
                   </LabelRow>
                   <LabelRow label="Confirm PIN">
-                    <Input type={showPin ? 'text' : 'password'} inputMode="numeric" maxLength={8}
+                    <Input type={showPin ? 'text' : 'password'} inputMode="numeric" maxLength={6}
                       value={pinConfirm} onChange={(e) => setPinConfirm(e.target.value.replace(/\D/g, ''))}
                       placeholder="Repeat PIN" className="font-mono tracking-widest" />
                   </LabelRow>
