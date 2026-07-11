@@ -1,0 +1,419 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>User Guide — Mini Project Planner</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Inter', system-ui, sans-serif; background: #0f172a; color: #e2e8f0; min-height: 100vh; line-height: 1.6; }
+    a { color: #818cf8; text-decoration: none; }
+    a:hover { color: #a5b4fc; }
+    code { font-family: 'JetBrains Mono', monospace; background: #1e293b; padding: 1px 6px; border-radius: 4px; font-size: 0.85em; color: #a5b4fc; }
+
+    nav { background: #1e293b; border-bottom: 1px solid #334155; padding: 12px 24px; display: flex; align-items: center; gap: 24px; flex-wrap: wrap; }
+    nav .brand { font-weight: 700; color: #818cf8; white-space: nowrap; }
+    nav a { color: #94a3b8; font-size: 14px; transition: color .15s; }
+    nav a:hover, nav a.active { color: #fff; font-weight: 500; }
+    nav a.app-link { margin-left: auto; color: #818cf8; font-size: 14px; }
+
+    .layout { display: flex; max-width: 1100px; margin: 0 auto; padding: 48px 24px; gap: 48px; }
+
+    aside { width: 200px; flex-shrink: 0; position: sticky; top: 24px; align-self: flex-start; }
+    aside nav { background: none; border: none; padding: 0; flex-direction: column; gap: 2px; }
+    aside nav .section-title { font-size: 10px; font-weight: 700; color: #475569; text-transform: uppercase; letter-spacing: .08em; margin: 16px 0 4px; }
+    aside nav .section-title:first-child { margin-top: 0; }
+    aside nav a { font-size: 13px; color: #64748b; padding: 4px 8px; border-radius: 6px; display: block; }
+    aside nav a:hover { color: #e2e8f0; background: #1e293b; }
+
+    article { flex: 1; min-width: 0; }
+    h1 { font-size: 2rem; font-weight: 800; color: #fff; margin-bottom: 8px; }
+    h2 { font-size: 1.2rem; font-weight: 700; color: #fff; margin: 48px 0 16px; padding-bottom: 8px; border-bottom: 1px solid #1e293b; }
+    h2:first-of-type { margin-top: 24px; }
+    h3 { font-size: 1rem; font-weight: 600; color: #a5b4fc; margin: 24px 0 10px; }
+    p { color: #94a3b8; margin-bottom: 12px; font-size: 15px; }
+    p.lead { color: #cbd5e1; font-size: 16px; margin-bottom: 32px; }
+
+    ul, ol { padding-left: 20px; display: flex; flex-direction: column; gap: 8px; margin-bottom: 16px; }
+    li { color: #94a3b8; font-size: 14px; }
+    li strong { color: #e2e8f0; }
+
+    .steps { list-style: none; padding-left: 0; }
+    .steps li { display: flex; gap: 16px; padding: 14px 0; border-bottom: 1px solid #1e293b; }
+    .steps li:last-child { border-bottom: none; }
+    .step-num { width: 28px; height: 28px; border-radius: 50%; background: #6366f1; color: #fff; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 700; flex-shrink: 0; margin-top: 2px; }
+    .step-body { flex: 1; }
+    .step-body strong { display: block; color: #e2e8f0; margin-bottom: 4px; font-size: 14px; }
+    .step-body span { color: #94a3b8; font-size: 13px; }
+
+    .card-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 12px; margin-bottom: 24px; }
+    .card { background: #1e293b; border: 1px solid #334155; border-radius: 10px; padding: 18px; }
+    .card .icon { font-size: 1.4rem; margin-bottom: 10px; }
+    .card h3 { color: #fff; font-size: 0.9rem; margin: 0 0 6px; }
+    .card p { font-size: 13px; margin: 0; }
+
+    .tip { background: #312e81; border: 1px solid #4338ca; border-radius: 8px; padding: 12px 16px; margin: 16px 0; font-size: 13px; color: #a5b4fc; }
+    .tip strong { color: #c7d2fe; }
+
+    .warn { background: #431407; border: 1px solid #c2410c; border-radius: 8px; padding: 12px 16px; margin: 16px 0; font-size: 13px; color: #fb923c; }
+    .warn strong { color: #fed7aa; }
+
+    kbd { display: inline-flex; align-items: center; background: #1e293b; border: 1px solid #475569; border-radius: 4px; padding: 1px 7px; font-size: 12px; font-family: 'JetBrains Mono', monospace; color: #cbd5e1; }
+
+    table { width: 100%; border-collapse: collapse; font-size: 13px; margin-bottom: 24px; }
+    th { text-align: left; color: #64748b; font-weight: 600; padding: 8px 12px; border-bottom: 1px solid #334155; font-size: 11px; text-transform: uppercase; letter-spacing: .05em; }
+    td { padding: 10px 12px; border-bottom: 1px solid #1e293b; color: #94a3b8; vertical-align: top; }
+    td:first-child { color: #e2e8f0; font-weight: 500; }
+
+    .badge { display: inline-flex; align-items: center; padding: 2px 8px; border-radius: 9999px; font-size: 11px; font-weight: 600; }
+    .b-violet { background: #4c1d9533; color: #a78bfa; }
+    .b-green  { background: #05603a33; color: #34d399; }
+    .b-amber  { background: #78350f33; color: #fcd34d; }
+    .b-blue   { background: #1e3a5f33; color: #60a5fa; }
+
+    footer { border-top: 1px solid #1e293b; text-align: center; padding: 24px; font-size: 12px; color: #475569; margin-top: 64px; }
+  </style>
+</head>
+<body>
+
+<nav>
+  <span class="brand">📋 Project Planner</span>
+  <a href="index.html">Features &amp; Roadmap</a>
+  <a href="sad.html">Architecture</a>
+  <a href="userguide.html" class="active">User Guide</a>
+  <a href="/" class="app-link">← Open App</a>
+</nav>
+
+<div class="layout">
+
+  <aside>
+    <nav>
+      <span class="section-title">Getting Started</span>
+      <a href="#install">Installation</a>
+      <a href="#first-project">First Project</a>
+      <a href="#pin">PIN Lock</a>
+
+      <span class="section-title">Board & Sprints</span>
+      <a href="#board">Kanban Board</a>
+      <a href="#work-items">Work Items</a>
+      <a href="#sprints">Sprints</a>
+      <a href="#backlog">Backlog</a>
+
+      <span class="section-title">Planning</span>
+      <a href="#epics">Epics</a>
+      <a href="#reports">Reports</a>
+
+      <span class="section-title">Vault</span>
+      <a href="#vault">Overview</a>
+      <a href="#wiki">Wiki</a>
+      <a href="#meeting-notes">Meeting Notes</a>
+      <a href="#decisions">Decisions</a>
+      <a href="#retros">Retrospectives</a>
+      <a href="#runsheets">Run Sheets</a>
+      <a href="#costs">Costs</a>
+
+      <span class="section-title">Sync & Settings</span>
+      <a href="#drive-sync">Google Drive Sync</a>
+      <a href="#project-settings">Project Settings</a>
+    </nav>
+  </aside>
+
+  <article>
+    <h1>User Guide</h1>
+    <p class="lead">Everything you need to get the most out of Mini Project Planner — from first install to advanced vault usage.</p>
+
+    <!-- ── GETTING STARTED ── -->
+    <h2 id="install">Installation</h2>
+    <p>Mini Project Planner is a Progressive Web App (PWA). No app store needed — install directly from your browser.</p>
+
+    <div class="card-grid">
+      <div class="card">
+        <div class="icon">🖥️</div>
+        <h3>Desktop (Chrome / Edge)</h3>
+        <p>Click the install icon in the address bar, or open the browser menu and choose <strong>Install Mini Project Planner</strong>.</p>
+      </div>
+      <div class="card">
+        <div class="icon">📱</div>
+        <h3>iOS (Safari)</h3>
+        <p>Tap the Share button → <strong>Add to Home Screen</strong>. The app opens in standalone mode without the browser chrome.</p>
+      </div>
+      <div class="card">
+        <div class="icon">🤖</div>
+        <h3>Android (Chrome)</h3>
+        <p>A banner appears automatically. Tap <strong>Install</strong>, or use the browser menu → <strong>Add to Home screen</strong>.</p>
+      </div>
+    </div>
+
+    <div class="tip"><strong>Offline support:</strong> Once installed, the app works 100% without an internet connection. All data is stored in your browser's IndexedDB.</div>
+
+    <h2 id="first-project">Your First Project</h2>
+    <ol class="steps">
+      <li>
+        <span class="step-num">1</span>
+        <div class="step-body">
+          <strong>Set up your profile</strong>
+          <span>Click the avatar in the top-right → <strong>Profile</strong>. Enter your display name and email. You'll be the project admin.</span>
+        </div>
+      </li>
+      <li>
+        <span class="step-num">2</span>
+        <div class="step-body">
+          <strong>Create a project</strong>
+          <span>From the Home screen, click <strong>New Project</strong>. Give it a name, choose a key (e.g. <code>SHOP</code>), pick an icon and color. The key prefixes all work item IDs (e.g. <code>SHOP-1</code>).</span>
+        </div>
+      </li>
+      <li>
+        <span class="step-num">3</span>
+        <div class="step-body">
+          <strong>Open the board</strong>
+          <span>You'll land on the Kanban board. Default stages: <strong>To Do → In Progress → Done</strong>. You can rename, reorder, or add stages in Project Settings.</span>
+        </div>
+      </li>
+      <li>
+        <span class="step-num">4</span>
+        <div class="step-body">
+          <strong>Add team members</strong>
+          <span>Go to <strong>Settings → Team Members</strong> to add collaborators. Members can be assigned to work items.</span>
+        </div>
+      </li>
+    </ol>
+
+    <h2 id="pin">PIN Lock</h2>
+    <p>Protect the app with a 6-digit PIN. When set, the app shows a lock screen on every startup.</p>
+    <ol>
+      <li>Go to <strong>Profile → PIN Lock</strong> and click <strong>Set PIN</strong>.</li>
+      <li>Enter a 6-digit PIN and confirm it. The PIN is hashed with SHA-256 and never leaves your device.</li>
+      <li>To change or remove the PIN, you must enter the current PIN first.</li>
+    </ol>
+    <div class="warn"><strong>Important:</strong> There is no PIN recovery. If you forget your PIN, you'll need to clear the app's browser data to regain access (this will erase all local data unless you have a Drive backup).</div>
+
+    <!-- ── BOARD & SPRINTS ── -->
+    <h2 id="board">Kanban Board</h2>
+    <p>The board shows all work items in the active sprint, organized into columns by stage.</p>
+
+    <h3>Drag & Drop</h3>
+    <p>Drag any card between columns to change its stage. The change is saved instantly to the local database.</p>
+
+    <h3>Filtering</h3>
+    <p>Use the filter bar above the board to narrow cards by:</p>
+    <ul>
+      <li><strong>Assignee</strong> — show only items assigned to a specific person</li>
+      <li><strong>Type</strong> — Story, Bug, Spike, Task, Action, Request</li>
+      <li><strong>Priority</strong> — Critical, High, Medium, Low</li>
+      <li><strong>Epic</strong> — filter by parent epic</li>
+    </ul>
+
+    <h2 id="work-items">Work Items</h2>
+    <p>Click any card to open the detail panel. Fields you can set:</p>
+
+    <table>
+      <thead><tr><th>Field</th><th>Description</th></tr></thead>
+      <tbody>
+        <tr><td>Type</td><td>Story, Bug, Spike, Task, Action, or Request</td></tr>
+        <tr><td>Priority</td><td>Critical / High / Medium / Low</td></tr>
+        <tr><td>Story Points</td><td>Effort estimate (Fibonacci: 1, 2, 3, 5, 8, 13, 21)</td></tr>
+        <tr><td>Assignee</td><td>Any team member added to the project</td></tr>
+        <tr><td>Epic</td><td>Link this item to an epic for grouping and progress tracking</td></tr>
+        <tr><td>Sprint</td><td>Assign to a sprint (or leave in the backlog)</td></tr>
+        <tr><td>Due Date</td><td>Optional deadline for the item</td></tr>
+        <tr><td>Description</td><td>Rich text with code blocks, lists, checkboxes</td></tr>
+      </tbody>
+    </table>
+
+    <h2 id="sprints">Sprints</h2>
+    <p>Sprints organize work into time-boxed iterations. The sprint lifecycle has three states:</p>
+
+    <div class="card-grid">
+      <div class="card">
+        <div class="icon">📋</div>
+        <h3><span class="badge b-violet">Planning</span></h3>
+        <p>Sprint is being set up. Add items from the backlog. Set a goal, start date, and end date.</p>
+      </div>
+      <div class="card">
+        <div class="icon">▶️</div>
+        <h3><span class="badge b-amber">Active</span></h3>
+        <p>Sprint is running. Items appear on the board. The team works through the columns.</p>
+      </div>
+      <div class="card">
+        <div class="icon">✅</div>
+        <h3><span class="badge b-green">Completed</span></h3>
+        <p>Sprint is closed. Unfinished items can be moved to the backlog or the next sprint. Velocity is recorded.</p>
+      </div>
+    </div>
+
+    <h3>Starting a Sprint</h3>
+    <ol>
+      <li>From the Backlog, select items and assign them to the sprint.</li>
+      <li>Click <strong>Start Sprint</strong> in the sprint panel. Set the end date.</li>
+      <li>The board now shows only items from the active sprint.</li>
+    </ol>
+
+    <h2 id="backlog">Backlog</h2>
+    <p>The Backlog page lists all work items not yet assigned to a sprint. Use it to:</p>
+    <ul>
+      <li>Create new items for future sprints</li>
+      <li>Prioritize by dragging items up or down</li>
+      <li>Assign items to the current sprint planning</li>
+      <li>Filter and search across all unstarted work</li>
+    </ul>
+
+    <!-- ── PLANNING ── -->
+    <h2 id="epics">Epics</h2>
+    <p>Epics are large bodies of work that span multiple sprints. Each epic tracks its own progress.</p>
+
+    <h3>Creating an Epic</h3>
+    <ol>
+      <li>Go to the <strong>Epics</strong> tab in the sidebar.</li>
+      <li>Click <strong>New Epic</strong>. Give it a title, description, and choose a color.</li>
+      <li>Link work items to the epic from the work item detail panel.</li>
+    </ol>
+
+    <h3>Milestones</h3>
+    <p>Each epic can have milestones. A milestone has a target date and a health indicator:</p>
+    <ul>
+      <li><span class="badge b-green">Green</span> — on track</li>
+      <li><span class="badge b-amber">Amber</span> — at risk</li>
+      <li><span class="badge" style="background:#4c1d1d33;color:#f87171;">Red</span> — behind / blocked</li>
+    </ul>
+
+    <h2 id="reports">Reports</h2>
+    <p>The Reports page gives you velocity and completion metrics across sprints.</p>
+
+    <table>
+      <thead><tr><th>Chart</th><th>What it shows</th></tr></thead>
+      <tbody>
+        <tr><td>Velocity</td><td>Planned vs completed story points per sprint as a grouped bar chart</td></tr>
+        <tr><td>Rolling Average</td><td>3-sprint rolling velocity trend — useful for capacity planning</td></tr>
+        <tr><td>Completion Rate</td><td>Percentage of planned items completed each sprint</td></tr>
+      </tbody>
+    </table>
+
+    <!-- ── VAULT ── -->
+    <h2 id="vault">Project Vault</h2>
+    <p>The Vault is a knowledge base attached to each project. It has 6 sections for different types of project documentation.</p>
+
+    <h2 id="wiki">Wiki</h2>
+    <p>A tree-structured set of markdown pages. Use it for technical docs, onboarding guides, runbooks, or any reference material.</p>
+    <ul>
+      <li>Pages can be nested under parent pages</li>
+      <li>Full rich text editing: headings, lists, code blocks, links</li>
+      <li>Click any page in the tree to view or edit it</li>
+    </ul>
+
+    <h2 id="meeting-notes">Meeting Notes</h2>
+    <p>Log meeting notes with date, attendees, and a rich text body.</p>
+    <ul>
+      <li>Notes are sorted by date — most recent first</li>
+      <li>Use the attendees field to record who was present</li>
+      <li>Body supports checklists for tracking action items</li>
+    </ul>
+
+    <h2 id="decisions">Decision Log</h2>
+    <p>Record architectural decisions, product choices, or any significant call the team makes.</p>
+
+    <table>
+      <thead><tr><th>Field</th><th>Purpose</th></tr></thead>
+      <tbody>
+        <tr><td>Title</td><td>Short name for the decision</td></tr>
+        <tr><td>Decision</td><td>What was decided</td></tr>
+        <tr><td>Rationale</td><td>Why this option was chosen over alternatives</td></tr>
+        <tr><td>Date</td><td>When the decision was made</td></tr>
+        <tr><td>Owner</td><td>Who made or owns this decision</td></tr>
+      </tbody>
+    </table>
+
+    <h2 id="retros">Retrospectives</h2>
+    <p>Structure sprint retrospectives with three columns:</p>
+    <ul>
+      <li><strong>Went well</strong> — what the team should keep doing</li>
+      <li><strong>Improve</strong> — what slowed the team down or caused friction</li>
+      <li><strong>Actions</strong> — specific action items for next sprint</li>
+    </ul>
+    <p>Each retro is linked to a sprint date so you can look back over time.</p>
+
+    <h2 id="runsheets">Run Sheets</h2>
+    <p>Ordered checklists for repeatable processes — deployments, release procedures, incident response, etc.</p>
+    <ul>
+      <li>Add steps in order — each step has a title and optional notes</li>
+      <li>During a run, tick off steps as they're completed</li>
+      <li>Reset the checklist to run it again for the next cycle</li>
+    </ul>
+
+    <h2 id="costs">Costs & Subscriptions</h2>
+    <p>Track ongoing costs associated with the project: hosting, SaaS tools, licenses, APIs.</p>
+
+    <table>
+      <thead><tr><th>Field</th><th>Description</th></tr></thead>
+      <tbody>
+        <tr><td>Name</td><td>Service or tool name (e.g. AWS, Vercel, Figma)</td></tr>
+        <tr><td>Amount</td><td>Cost per billing cycle</td></tr>
+        <tr><td>Billing</td><td>Monthly or Annual</td></tr>
+        <tr><td>Category</td><td>Infrastructure, Design, Monitoring, etc.</td></tr>
+        <tr><td>Notes</td><td>Account info, renewal date, contract details</td></tr>
+      </tbody>
+    </table>
+    <p>The costs page shows a total monthly and annual burn rate across all entries.</p>
+
+    <!-- ── SYNC & SETTINGS ── -->
+    <h2 id="drive-sync">Google Drive Sync</h2>
+    <p>Back up and restore your data using Google Drive's private AppData folder. The backup is a single SQL file visible only to this app.</p>
+
+    <h3>Setup</h3>
+    <ol class="steps">
+      <li>
+        <span class="step-num">1</span>
+        <div class="step-body">
+          <strong>App must be configured with a Google Client ID</strong>
+          <span>The self-hosted version requires a <code>VITE_GOOGLE_CLIENT_ID</code> environment variable. The hosted version has this preconfigured.</span>
+        </div>
+      </li>
+      <li>
+        <span class="step-num">2</span>
+        <div class="step-body">
+          <strong>Connect from Profile</strong>
+          <span>Go to <strong>Profile → Google Drive Sync</strong> and click <strong>Connect Google Drive</strong>. A popup opens for Google sign-in.</span>
+        </div>
+      </li>
+      <li>
+        <span class="step-num">3</span>
+        <div class="step-body">
+          <strong>Authorize the app</strong>
+          <span>Grant access to the Drive AppData scope. The app never reads your personal Drive files — only its own backup folder.</span>
+        </div>
+      </li>
+    </ol>
+
+    <h3>Sync behaviour</h3>
+    <ul>
+      <li>Click <strong>Sync now</strong> to push a backup immediately</li>
+      <li>The app auto-syncs every 15 minutes when online and connected</li>
+      <li>Sync status (last synced time, errors) shows in the top bar</li>
+    </ul>
+
+    <div class="tip"><strong>Multi-device restore:</strong> On a new device, connect Google Drive and use the Restore option to pull down the latest backup. The page will reload with your data.</div>
+
+    <h2 id="project-settings">Project Settings</h2>
+
+    <h3>General</h3>
+    <ul>
+      <li><strong>Project name</strong> — display name shown in the sidebar</li>
+      <li><strong>Project key</strong> — short prefix for issue IDs (e.g. <code>SHOP</code>). Must be unique.</li>
+      <li><strong>Icon &amp; color</strong> — customize how the project appears in the switcher</li>
+    </ul>
+
+    <h3>Board Stages</h3>
+    <p>Add, rename, reorder, or remove columns on the Kanban board. Every project has its own stage configuration.</p>
+
+    <h3>Team Members</h3>
+    <p>Add team members by name. Members appear in the assignee dropdown when creating or editing work items.</p>
+    <div class="tip"><strong>Roles:</strong> The first user is set as Admin. Team members added via Settings are assignable but don't have separate login credentials — the app is single-user by design in v1.0.</div>
+
+  </article>
+</div>
+
+<footer>
+  Mini Project Planner · <a href="index.html">Features</a> · <a href="sad.html">Architecture</a> · <a href="userguide.html">User Guide</a>
+</footer>
+
+</body>
+</html>
