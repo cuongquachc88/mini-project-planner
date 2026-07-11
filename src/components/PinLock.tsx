@@ -20,13 +20,13 @@ export function PinLock({ pinHash, onUnlock, userName }: Props) {
   }, [])
 
   async function handleInput(idx: number, val: string) {
-    if (!/^\d?$/.test(val)) return
+    const digit = val.replace(/\D/g, '').slice(-1)
     const next = [...digits]
-    next[idx] = val
+    next[idx] = digit
     setDigits(next)
     setError(false)
 
-    if (val && idx < 5) {
+    if (digit && idx < 5) {
       inputsRef.current[idx + 1]?.focus()
     }
 
@@ -48,11 +48,17 @@ export function PinLock({ pinHash, onUnlock, userName }: Props) {
   }
 
   function handleKeyDown(idx: number, e: React.KeyboardEvent) {
-    if (e.key === 'Backspace' && !digits[idx] && idx > 0) {
-      const next = [...digits]
-      next[idx - 1] = ''
-      setDigits(next)
-      inputsRef.current[idx - 1]?.focus()
+    if (e.key === 'Backspace') {
+      if (digits[idx]) {
+        const next = [...digits]
+        next[idx] = ''
+        setDigits(next)
+      } else if (idx > 0) {
+        const next = [...digits]
+        next[idx - 1] = ''
+        setDigits(next)
+        inputsRef.current[idx - 1]?.focus()
+      }
     }
   }
 

@@ -57,12 +57,12 @@ export default function Login() {
     refs: React.MutableRefObject<(HTMLInputElement | null)[]>,
     onComplete?: (pin: string) => void,
   ) {
-    if (!/^\d?$/.test(val)) return
+    const digit = val.replace(/\D/g, '').slice(-1)
     const next = [...arr]
-    next[idx] = val
+    next[idx] = digit
     setArr(next)
     setPinError(false)
-    if (val && idx < 5) refs.current[idx + 1]?.focus()
+    if (digit && idx < 5) refs.current[idx + 1]?.focus()
     if (onComplete && next.every(d => d !== '')) onComplete(next.join(''))
   }
 
@@ -73,11 +73,17 @@ export default function Login() {
     setArr: (v: string[]) => void,
     refs: React.MutableRefObject<(HTMLInputElement | null)[]>,
   ) {
-    if (e.key === 'Backspace' && !arr[idx] && idx > 0) {
-      const next = [...arr]
-      next[idx - 1] = ''
-      setArr(next)
-      refs.current[idx - 1]?.focus()
+    if (e.key === 'Backspace') {
+      if (arr[idx]) {
+        const next = [...arr]
+        next[idx] = ''
+        setArr(next)
+      } else if (idx > 0) {
+        const next = [...arr]
+        next[idx - 1] = ''
+        setArr(next)
+        refs.current[idx - 1]?.focus()
+      }
     }
   }
 
@@ -176,15 +182,12 @@ export default function Login() {
           <input
             key={i}
             ref={el => { inputsRef.current[i] = el }}
-            type="text"
+            type="password"
             inputMode="numeric"
             autoComplete="off"
             maxLength={1}
-            value={d ? '●' : ''}
-            onChange={e => {
-              const raw = e.target.value.replace('●', '').replace(/\D/g, '')
-              handleDigit(i, raw.slice(-1), digits, setDigits, inputsRef, handleUnlock)
-            }}
+            value={d}
+            onChange={e => handleDigit(i, e.target.value, digits, setDigits, inputsRef, handleUnlock)}
             onKeyDown={e => handleKeyDown(i, e, digits, setDigits, inputsRef)}
             className={[
               'w-12 h-12 text-center text-xl font-bold rounded-xl border-2 transition-all outline-none bg-white/[0.05] text-white caret-transparent',
@@ -219,15 +222,12 @@ export default function Login() {
           <input
             key={i}
             ref={el => { refs.current[i] = el }}
-            type="text"
+            type="password"
             inputMode="numeric"
             autoComplete="off"
             maxLength={1}
-            value={d ? '●' : ''}
-            onChange={e => {
-              const raw = e.target.value.replace('●', '').replace(/\D/g, '')
-              handleDigit(i, raw.slice(-1), arr, setArr, refs, onComplete)
-            }}
+            value={d}
+            onChange={e => handleDigit(i, e.target.value, arr, setArr, refs, onComplete)}
             onKeyDown={e => handleKeyDown(i, e, arr, setArr, refs)}
             className={[
               'w-10 h-10 text-center text-lg font-bold rounded-lg border-2 transition-all outline-none bg-white/[0.05] text-white caret-transparent',
