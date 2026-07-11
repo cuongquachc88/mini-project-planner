@@ -41,14 +41,18 @@ export function useGoogleDrive() {
 
   const restore = useCallback(async () => {
     setSyncStatus('syncing')
+    setSyncError(null)
     try {
       await downloadAndRestore(db)
+      const now = new Date().toISOString()
+      setLastSyncedAt(now)
+      setSyncStatus('success')
     } catch (e) {
       const msg = e instanceof Error ? e.message : String(e)
       setSyncError(msg)
       setSyncStatus('error')
     }
-  }, [db, setSyncStatus, setSyncError])
+  }, [db, setSyncStatus, setSyncError, setLastSyncedAt])
 
   const connect = useCallback(async () => {
     await initiateOAuthFlow()

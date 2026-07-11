@@ -22,6 +22,77 @@ export function getDb(): PGliteWithLive {
   return _db
 }
 
+// Tables in dependency order (parents before children for export, children first for delete)
+const SYNC_TABLES = [
+  'users', 'projects', 'project_members', 'custom_stages', 'labels',
+  'epics', 'milestones', 'sprints', 'work_items', 'work_item_labels',
+  'comments', 'meeting_notes', 'decisions', 'retrospectives',
+  'run_sheets', 'run_sheet_items', 'wiki_pages', 'costs',
+] as const
+
+export type DbSnapshot = Record<string, Record<string, unknown>[]>
+
+export async function exportDbAsJson(): Promise<DbSnapshot> {
+  const db = getDb()
+  const snapshot: DbSnapshot = {}
+  for (const table of SYNC_TABLES) {
+    const result = await db.query(`SELECT * FROM ${table}`)
+    snapshot[table] = result.rows as Record<string, unknown>[]
+  }
+  return snapshot
+}
+
+export async function mergeAndApplySnapshot(remote: DbSnapshot): Promise<void> {
+  const db = getDb()
+  const local = await exportDbAsJson()
+
+  // For each table, merge rows using last-write-wins on updated_at
+  for (const table of SYNC_TABLES) {
+    const localRows = local[table] ?? []
+    const remoteRows = remote[table] ?? []
+
+    const merged = new Map<string, Record<string, unknown>>()
+
+    for (const row of localRows) {
+      merged.set(row.id as string, row)
+    }
+
+    for (const row of remoteRows) {
+      const id = row.id as string
+      const existing = merged.get(id)
+      if (!existing) {
+        // Row only in remote → take it
+        merged.set(id, row)
+      } else {
+        // Conflict: take the newer one by updated_at
+        const localTs = existing.updated_at ? new Date(existing.updated_at as string).getTime() : 0
+        const remoteTs = row.updated_at ? new Date(row.updated_at as string).getTime() : 0
+        if (remoteTs > localTs) merged.set(id, row)
+      }
+    }
+
+    const mergedRows = Array.from(merged.values())
+    if (mergedRows.length === 0) continue
+
+    const cols = Object.keys(mergedRows[0])
+    const colList = cols.join(', ')
+    const updateSet = cols.filter(c => c !== 'id').map(c => `${c} = EXCLUDED.${c}`).join(', ')
+
+    for (const row of mergedRows) {
+      const values = cols.map(c => {
+        const v = row[c]
+        if (v === null || v === undefined) return 'NULL'
+        if (typeof v === 'boolean') return v ? 'TRUE' : 'FALSE'
+        if (typeof v === 'number') return String(v)
+        return `'${String(v).replace(/'/g, "''")}'`
+      })
+      await db.exec(
+        `INSERT INTO ${table} (${colList}) VALUES (${values.join(', ')}) ON CONFLICT (id) DO UPDATE SET ${updateSet}`
+      )
+    }
+  }
+}
+
 export async function exportDbAsSql(): Promise<string> {
   const db = getDb()
   const tables = [

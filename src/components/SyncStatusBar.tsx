@@ -13,10 +13,11 @@ export function SyncStatusBar() {
   if (!isConfigured) return null
 
   async function handleRestore() {
-    if (!confirm('Pull from Drive? This will overwrite all local data and reload the app.')) return
+    if (!confirm('Pull from Drive? Remote changes will be merged into your local data.')) return
     setRestoring(true)
     try {
       await restore()
+      setRestoring(false)
     } catch {
       setRestoring(false)
     }
