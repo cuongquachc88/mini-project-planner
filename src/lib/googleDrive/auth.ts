@@ -92,9 +92,8 @@ export async function handleOAuthCallback(code: string): Promise<void> {
     }),
   })
 
-  if (!resp.ok) throw new Error(`Token exchange failed: ${resp.statusText}`)
-
-  const json = await resp.json() as { access_token: string; expires_in: number }
+  const json = await resp.json() as { access_token: string; expires_in: number; error?: string; error_description?: string }
+  if (!resp.ok) throw new Error(`Token exchange failed: ${json.error} — ${json.error_description}`)
   storeToken({
     access_token: json.access_token,
     expires_at: Date.now() + json.expires_in * 1000,
