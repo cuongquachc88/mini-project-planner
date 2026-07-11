@@ -1,13 +1,13 @@
 import { useState, useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Box, ArrowRight, User, Mail, Lock, Eye, EyeOff, ShieldCheck } from 'lucide-react'
+import { Box, ArrowRight, User, Mail, ShieldCheck, Lock } from 'lucide-react'
 import { createUser, setAppMeta, getAppMeta } from '@/db/queries/users'
 import { hashPin, verifyPin } from '@/lib/utils/pin'
 import { useStore } from '@/store'
 import { Input } from '@/components/ui/Input'
 import { Button } from '@/components/ui/Button'
 
-type Mode = 'loading' | 'unlock' | 'register-identity' | 'register-pin'
+type Mode = 'loading' | 'unlock' | 'register' | 'reset-pin'
 
 export default function Login() {
   const navigate = useNavigate()
@@ -16,20 +16,19 @@ export default function Login() {
   const [mode, setMode] = useState<Mode>('loading')
   const [pinHash, setPinHash] = useState<string | null>(null)
 
-  // Registration state
+  // Registration
   const [name, setName] = useState('')
   const [email, setEmail] = useState('')
-  const [newPin, setNewPin] = useState('')
-  const [newPinConfirm, setNewPinConfirm] = useState('')
-  const [showPin, setShowPin] = useState(false)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
 
-  // PIN unlock state
-  const [digits, setDigits] = useState(['', '', '', ''])
+  // 6-digit PIN boxes (shared by unlock + register + reset)
+  const [digits, setDigits] = useState(['', '', '', '', '', ''])
+  const [confirmDigits, setConfirmDigits] = useState(['', '', '', '', '', ''])
   const [pinError, setPinError] = useState(false)
   const [shaking, setShaking] = useState(false)
   const inputsRef = useRef<(HTMLInputElement | null)[]>([])
+  const confirmRef = useRef<(HTMLInputElement | null)[]>([])
 
   useEffect(() => {
     if (!sessionReady) return
@@ -37,79 +36,99 @@ export default function Login() {
       getAppMeta('pin_hash').then(ph => {
         const validHash = ph && ph.length === 64 ? ph : null
         setPinHash(validHash)
-        // User exists but pin was wiped (e.g. old logout) — skip identity, go straight to set-pin
-        setMode(validHash ? 'unlock' : 'register-pin')
+        setMode(validHash ? 'unlock' : 'reset-pin')
       })
     } else {
-      setMode('register-identity')
+      setMode('register')
     }
   }, [sessionReady, currentUser])
 
-  // Focus first PIN input when unlock mode appears
   useEffect(() => {
-    if (mode === 'unlock') {
+    if (mode === 'unlock' || mode === 'reset-pin') {
       setTimeout(() => inputsRef.current[0]?.focus(), 50)
     }
   }, [mode])
 
-  async function handlePinDigit(idx: number, val: string) {
+  function handleDigit(
+    idx: number,
+    val: string,
+    arr: string[],
+    setArr: (v: string[]) => void,
+    refs: React.MutableRefObject<(HTMLInputElement | null)[]>,
+    onComplete?: (pin: string) => void,
+  ) {
     if (!/^\d?$/.test(val)) return
-    const next = [...digits]
+    const next = [...arr]
     next[idx] = val
-    setDigits(next)
+    setArr(next)
     setPinError(false)
-    if (val && idx < 3) inputsRef.current[idx + 1]?.focus()
-    if (next.every(d => d !== '')) {
-      const ok = await verifyPin(next.join(''), pinHash!)
-      if (ok) {
-        sessionStorage.setItem('planner_unlocked', '1')
-        navigate('/ui', { replace: true })
-      } else {
-        setShaking(true)
-        setPinError(true)
-        setTimeout(() => {
-          setDigits(['', '', '', ''])
-          setShaking(false)
-          inputsRef.current[0]?.focus()
-        }, 600)
-      }
-    }
+    if (val && idx < 5) refs.current[idx + 1]?.focus()
+    if (onComplete && next.every(d => d !== '')) onComplete(next.join(''))
   }
 
-  function handlePinKeyDown(idx: number, e: React.KeyboardEvent) {
-    if (e.key === 'Backspace' && !digits[idx] && idx > 0) {
-      const next = [...digits]
+  function handleKeyDown(
+    idx: number,
+    e: React.KeyboardEvent,
+    arr: string[],
+    setArr: (v: string[]) => void,
+    refs: React.MutableRefObject<(HTMLInputElement | null)[]>,
+  ) {
+    if (e.key === 'Backspace' && !arr[idx] && idx > 0) {
+      const next = [...arr]
       next[idx - 1] = ''
-      setDigits(next)
-      inputsRef.current[idx - 1]?.focus()
+      setArr(next)
+      refs.current[idx - 1]?.focus()
     }
   }
 
-  async function handleIdentity(e: React.FormEvent) {
-    e.preventDefault()
-    if (!name.trim() || !email.trim()) { setError('Name and email are required'); return }
-    setError('')
-    setMode('register-pin')
+  async function handleUnlock(pin: string) {
+    const ok = await verifyPin(pin, pinHash!)
+    if (ok) {
+      sessionStorage.setItem('planner_unlocked', '1')
+      navigate('/ui', { replace: true })
+    } else {
+      setShaking(true)
+      setPinError(true)
+      setTimeout(() => {
+        setDigits(['', '', '', '', '', ''])
+        setShaking(false)
+        inputsRef.current[0]?.focus()
+      }, 600)
+    }
   }
 
   async function handleRegister(e: React.FormEvent) {
     e.preventDefault()
-    if (newPin.length < 4) { setError('PIN must be at least 4 digits'); return }
-    if (!/^\d+$/.test(newPin)) { setError('Digits only'); return }
-    if (newPin !== newPinConfirm) { setError('PINs do not match'); return }
+    if (!name.trim() || !email.trim()) { setError('Name and email are required'); return }
+    const pin = digits.join('')
+    const confirm = confirmDigits.join('')
+    if (pin.length !== 6) { setError('Enter all 6 PIN digits'); return }
+    if (pin !== confirm) { setError('PINs do not match'); return }
     setLoading(true); setError('')
     try {
-      const h = await hashPin(newPin)
-      // If user already exists (lost PIN), just update the PIN — don't re-create
-      if (currentUser) {
-        await setAppMeta('pin_hash', h)
-        sessionStorage.setItem('planner_unlocked', '1')
-        navigate('/ui', { replace: true })
-        return
-      }
+      const h = await hashPin(pin)
       const user = await createUser({ name: name.trim(), email: email.trim(), role: 'admin' })
       await Promise.all([setAppMeta('active_user_id', user.id), setAppMeta('pin_hash', h)])
       setCurrentUser(user)
+      sessionStorage.setItem('planner_unlocked', '1')
+      navigate('/ui', { replace: true })
+    } catch (e) {
+      setError(String(e))
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  async function handleResetPin(e: React.FormEvent) {
+    e.preventDefault()
+    const pin = digits.join('')
+    const confirm = confirmDigits.join('')
+    if (pin.length !== 6) { setError('Enter all 6 PIN digits'); return }
+    if (pin !== confirm) { setError('PINs do not match'); return }
+    setLoading(true); setError('')
+    try {
+      const h = await hashPin(pin)
+      await setAppMeta('pin_hash', h)
       sessionStorage.setItem('planner_unlocked', '1')
       navigate('/ui', { replace: true })
     } catch (e) {
@@ -139,7 +158,7 @@ export default function Login() {
 
   if (mode === 'loading') return shell(null)
 
-  // ── Returning user: PIN only ──────────────────────────
+  // ── Returning user: 6-digit unlock ──────────────────────
   if (mode === 'unlock') return shell(
     <>
       <div className="mb-8 text-center">
@@ -149,10 +168,10 @@ export default function Login() {
         <h1 className="text-[24px] font-bold text-white">
           Welcome back, {currentUser?.name.split(' ')[0]}
         </h1>
-        <p className="text-[13px] text-white/40 mt-1.5">Enter your PIN to continue</p>
+        <p className="text-[13px] text-white/40 mt-1.5">Enter your 6-digit PIN to continue</p>
       </div>
 
-      <div className={`flex justify-center gap-3 ${shaking ? 'animate-shake' : ''}`} data-1p-ignore data-lpignore="true">
+      <div className={`flex justify-center gap-2 ${shaking ? 'animate-shake' : ''}`} data-1p-ignore data-lpignore="true">
         {digits.map((d, i) => (
           <input
             key={i}
@@ -164,11 +183,11 @@ export default function Login() {
             value={d ? '●' : ''}
             onChange={e => {
               const raw = e.target.value.replace('●', '').replace(/\D/g, '')
-              handlePinDigit(i, raw.slice(-1))
+              handleDigit(i, raw.slice(-1), digits, setDigits, inputsRef, handleUnlock)
             }}
-            onKeyDown={e => handlePinKeyDown(i, e)}
+            onKeyDown={e => handleKeyDown(i, e, digits, setDigits, inputsRef)}
             className={[
-              'w-14 h-14 text-center text-2xl font-bold rounded-xl border-2 transition-all outline-none bg-white/[0.05] text-white caret-transparent',
+              'w-12 h-12 text-center text-xl font-bold rounded-xl border-2 transition-all outline-none bg-white/[0.05] text-white caret-transparent',
               pinError ? 'border-red-500 bg-red-500/10' : d ? 'border-violet-500 bg-violet-500/10' : 'border-white/[0.12] focus:border-violet-500',
             ].join(' ')}
           />
@@ -183,22 +202,51 @@ export default function Login() {
     </>
   )
 
-  // ── New user step 1: identity ─────────────────────────
-  if (mode === 'register-identity') return shell(
-    <>
-      <div className="flex items-center justify-center gap-2 mb-8">
-        {[1, 2].map((n, i) => (
-          <div key={n} className="flex items-center gap-2">
-            <div className={`w-6 h-6 rounded-full flex items-center justify-center text-[11px] font-bold ${i === 0 ? 'bg-violet-600 text-white' : 'bg-white/[0.06] text-white/25'}`}>{n}</div>
-            {i === 0 && <div className="w-8 h-px bg-white/[0.1]" />}
-          </div>
+  // ── PIN boxes row component ──────────────────────────────
+  const PinRow = ({
+    label, arr, setArr, refs, onComplete,
+  }: {
+    label: string
+    arr: string[]
+    setArr: (v: string[]) => void
+    refs: React.MutableRefObject<(HTMLInputElement | null)[]>
+    onComplete?: (pin: string) => void
+  }) => (
+    <div className="space-y-2">
+      <label className="block text-[11px] font-medium text-white/35 uppercase tracking-wider">{label}</label>
+      <div className="flex justify-between gap-1.5" data-1p-ignore data-lpignore="true">
+        {arr.map((d, i) => (
+          <input
+            key={i}
+            ref={el => { refs.current[i] = el }}
+            type="text"
+            inputMode="numeric"
+            autoComplete="off"
+            maxLength={1}
+            value={d ? '●' : ''}
+            onChange={e => {
+              const raw = e.target.value.replace('●', '').replace(/\D/g, '')
+              handleDigit(i, raw.slice(-1), arr, setArr, refs, onComplete)
+            }}
+            onKeyDown={e => handleKeyDown(i, e, arr, setArr, refs)}
+            className={[
+              'w-10 h-10 text-center text-lg font-bold rounded-lg border-2 transition-all outline-none bg-white/[0.05] text-white caret-transparent',
+              d ? 'border-violet-500 bg-violet-500/10' : 'border-white/[0.12] focus:border-violet-500',
+            ].join(' ')}
+          />
         ))}
       </div>
+    </div>
+  )
+
+  // ── New user: single form (identity + PIN) ───────────────
+  if (mode === 'register') return shell(
+    <>
       <div className="mb-8 text-center">
         <h1 className="text-[26px] font-bold text-white tracking-tight">Welcome</h1>
-        <p className="text-[13px] text-white/40 mt-2">Tell us who you are</p>
+        <p className="text-[13px] text-white/40 mt-2">Set up your account</p>
       </div>
-      <form onSubmit={handleIdentity} className="bg-[#111113] border border-white/[0.08] rounded-2xl p-6 shadow-2xl shadow-black/60 space-y-4">
+      <form onSubmit={handleRegister} className="bg-[#111113] border border-white/[0.08] rounded-2xl p-6 shadow-2xl shadow-black/60 space-y-4">
         <div className="space-y-1">
           <label className="block text-[11px] font-medium text-white/35 uppercase tracking-wider">Display name</label>
           <div className="relative">
@@ -213,70 +261,44 @@ export default function Login() {
             <Input type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="you@example.com" className="pl-8" />
           </div>
         </div>
-        {error && <p className="text-red-400 text-[12px]">{error}</p>}
-        <Button type="submit" className="w-full gap-2 mt-1">Next <ArrowRight size={14} /></Button>
-        <p className="text-center text-[11px] text-white/20 pt-1">All data stays on your device</p>
-      </form>
-    </>
-  )
 
-  // ── New user step 2 / existing user PIN reset ────────
-  return shell(
-    <>
-      {!currentUser && (
-        <div className="flex items-center justify-center gap-2 mb-8">
-          {[1, 2].map((n, i) => (
-            <div key={n} className="flex items-center gap-2">
-              <div className={`w-6 h-6 rounded-full flex items-center justify-center text-[11px] font-bold ${i === 1 ? 'bg-violet-600 text-white' : 'bg-violet-600/30 text-violet-400'}`}>{n}</div>
-              {i === 0 && <div className="w-8 h-px bg-violet-500/30" />}
-            </div>
-          ))}
+        <div className="border-t border-white/[0.06] pt-4 space-y-4">
+          <PinRow label="PIN (6 digits)" arr={digits} setArr={setDigits} refs={inputsRef}
+            onComplete={() => confirmRef.current[0]?.focus()} />
+          <PinRow label="Confirm PIN" arr={confirmDigits} setArr={setConfirmDigits} refs={confirmRef} />
         </div>
-      )}
-      <div className="mb-8 text-center">
-        <div className="w-14 h-14 rounded-2xl bg-violet-500/10 border border-violet-500/20 flex items-center justify-center mx-auto mb-4">
-          <Lock size={24} className="text-violet-400" strokeWidth={1.8} />
-        </div>
-        <h1 className="text-[26px] font-bold text-white tracking-tight">
-          {currentUser ? 'Reset your PIN' : 'Set your PIN'}
-        </h1>
-        <p className="text-[13px] text-white/40 mt-2">
-          {currentUser ? `Welcome back, ${currentUser.name.split(' ')[0]} — set a new PIN` : 'Used to unlock on return visits'}
-        </p>
-      </div>
-      <form onSubmit={handleRegister} className="bg-[#111113] border border-white/[0.08] rounded-2xl p-6 shadow-2xl shadow-black/60 space-y-4">
-        <div className="space-y-1">
-          <label className="block text-[11px] font-medium text-white/35 uppercase tracking-wider">PIN (4–8 digits)</label>
-          <div className="relative">
-            <Lock size={13} className="absolute left-3 top-1/2 -translate-y-1/2 text-white/25 pointer-events-none" />
-            <Input type={showPin ? 'text' : 'password'} inputMode="numeric" maxLength={8}
-              value={newPin} onChange={e => setNewPin(e.target.value.replace(/\D/g, ''))}
-              placeholder="••••" className="pl-8 pr-9 font-mono tracking-widest" autoFocus />
-            <button type="button" onClick={() => setShowPin(v => !v)}
-              className="absolute right-2.5 top-1/2 -translate-y-1/2 text-white/25 hover:text-white/60 transition-colors">
-              {showPin ? <EyeOff size={13} /> : <Eye size={13} />}
-            </button>
-          </div>
-        </div>
-        <div className="space-y-1">
-          <label className="block text-[11px] font-medium text-white/35 uppercase tracking-wider">Confirm PIN</label>
-          <div className="relative">
-            <Lock size={13} className="absolute left-3 top-1/2 -translate-y-1/2 text-white/25 pointer-events-none" />
-            <Input type={showPin ? 'text' : 'password'} inputMode="numeric" maxLength={8}
-              value={newPinConfirm} onChange={e => setNewPinConfirm(e.target.value.replace(/\D/g, ''))}
-              placeholder="••••" className="pl-8 font-mono tracking-widest" />
-          </div>
-        </div>
+
         {error && <p className="text-red-400 text-[12px]">{error}</p>}
         <Button type="submit" disabled={loading} className="w-full gap-2 mt-1">
           {loading ? 'Setting up…' : 'Get started'} {!loading && <ArrowRight size={14} />}
         </Button>
-        {!currentUser && (
-          <button type="button" onClick={() => { setMode('register-identity'); setError('') }}
-            className="w-full text-center text-[12px] text-white/25 hover:text-white/50 transition-colors">
-            ← Back
-          </button>
-        )}
+        <p className="text-center text-[11px] text-white/20 flex items-center justify-center gap-1">
+          <ShieldCheck size={10} /> All data stays on your device
+        </p>
+      </form>
+    </>
+  )
+
+  // ── Existing user PIN reset ──────────────────────────────
+  return shell(
+    <>
+      <div className="mb-8 text-center">
+        <div className="w-14 h-14 rounded-2xl bg-violet-500/10 border border-violet-500/20 flex items-center justify-center mx-auto mb-4">
+          <Lock size={24} className="text-violet-400" strokeWidth={1.8} />
+        </div>
+        <h1 className="text-[26px] font-bold text-white tracking-tight">Reset your PIN</h1>
+        <p className="text-[13px] text-white/40 mt-2">
+          Welcome back, {currentUser?.name.split(' ')[0]} — set a new 6-digit PIN
+        </p>
+      </div>
+      <form onSubmit={handleResetPin} className="bg-[#111113] border border-white/[0.08] rounded-2xl p-6 shadow-2xl shadow-black/60 space-y-4">
+        <PinRow label="New PIN (6 digits)" arr={digits} setArr={setDigits} refs={inputsRef}
+          onComplete={() => confirmRef.current[0]?.focus()} />
+        <PinRow label="Confirm PIN" arr={confirmDigits} setArr={setConfirmDigits} refs={confirmRef} />
+        {error && <p className="text-red-400 text-[12px]">{error}</p>}
+        <Button type="submit" disabled={loading} className="w-full gap-2 mt-1">
+          {loading ? 'Saving…' : 'Set PIN'} {!loading && <ArrowRight size={14} />}
+        </Button>
         <p className="text-center text-[11px] text-white/20 flex items-center justify-center gap-1">
           <ShieldCheck size={10} /> PIN is hashed locally, never sent anywhere
         </p>
