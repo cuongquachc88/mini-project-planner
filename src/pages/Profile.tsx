@@ -7,7 +7,7 @@ import { hashPin, verifyPin } from '@/lib/utils/pin'
 import { Input } from '@/components/ui/Input'
 import { Button } from '@/components/ui/Button'
 import {
-  User, ArrowLeft, Cloud, CloudOff, RefreshCw, AlertCircle,
+  User, ArrowLeft, Cloud, CloudOff, RefreshCw,
   Check, Lock, LockOpen, ShieldCheck, Eye, EyeOff,
 } from 'lucide-react'
 import { fmtRelative } from '@/lib/utils/dates'
