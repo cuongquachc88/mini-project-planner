@@ -26,13 +26,9 @@ export default function OAuthCallback() {
     handleOAuthCallback(code)
       .then(() => {
         setDriveConnected(true)
-        // If opened as popup, close it and refresh opener
-        if (window.opener) {
-          window.opener.postMessage({ type: 'DRIVE_AUTH_SUCCESS' }, window.location.origin)
-          window.close()
-        } else {
-          navigate('/profile')
-        }
+        const returnTo = localStorage.getItem('drive_oauth_return') || '/profile'
+        localStorage.removeItem('drive_oauth_return')
+        navigate(returnTo, { replace: true })
       })
       .catch((e: Error) => {
         setError(e.message)
@@ -41,21 +37,21 @@ export default function OAuthCallback() {
 
   if (error) {
     return (
-      <div className="min-h-screen bg-slate-950 flex items-center justify-center">
-        <div className="card p-6 max-w-sm text-center space-y-3">
+      <div className="min-h-screen bg-[#0d0d0f] flex items-center justify-center">
+        <div className="bg-[#141416] border border-white/[0.07] rounded-2xl p-6 max-w-sm w-full text-center space-y-3">
           <p className="text-red-400 font-medium">Drive connection failed</p>
-          <p className="text-sm text-slate-400">{error}</p>
-          <button onClick={() => navigate('/profile')} className="btn-ghost text-sm">Go back</button>
+          <p className="text-sm text-white/40">{error}</p>
+          <button onClick={() => navigate('/profile')} className="text-sm text-white/40 hover:text-white/70 transition-colors">Go back</button>
         </div>
       </div>
     )
   }
 
   return (
-    <div className="min-h-screen bg-slate-950 flex items-center justify-center">
+    <div className="min-h-screen bg-[#0d0d0f] flex items-center justify-center">
       <div className="text-center space-y-3">
-        <div className="w-8 h-8 border-2 border-brand-500 border-t-transparent rounded-full animate-spin mx-auto" />
-        <p className="text-sm text-slate-400">Connecting Google Drive…</p>
+        <div className="w-8 h-8 border-2 border-violet-500 border-t-transparent rounded-full animate-spin mx-auto" />
+        <p className="text-sm text-white/40">Connecting Google Drive…</p>
       </div>
     </div>
   )

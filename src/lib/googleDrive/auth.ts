@@ -56,6 +56,8 @@ export async function initiateOAuthFlow(): Promise<void> {
 
   const { verifier, challenge } = await generatePKCE()
   localStorage.setItem('drive_code_verifier', verifier)
+  // Remember where to return after OAuth completes
+  localStorage.setItem('drive_oauth_return', window.location.pathname)
 
   const params = new URLSearchParams({
     client_id: CLIENT_ID,
@@ -68,14 +70,8 @@ export async function initiateOAuthFlow(): Promise<void> {
     prompt: 'consent',
   })
 
-  // Use popup to avoid breaking COOP/COEP headers on main window
-  const popup = window.open(
-    `https://accounts.google.com/o/oauth2/v2/auth?${params}`,
-    'google-oauth',
-    'width=500,height=600,top=100,left=100',
-  )
-
-  if (!popup) throw new Error('Popup blocked. Allow popups for this site.')
+  // Redirect in same tab — COOP/COEP headers break window.opener so popup messaging is unreliable
+  window.location.href = `https://accounts.google.com/o/oauth2/v2/auth?${params}`
 }
 
 export async function handleOAuthCallback(code: string): Promise<void> {
