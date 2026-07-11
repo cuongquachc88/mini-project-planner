@@ -9,6 +9,128 @@ import { Button } from '@/components/ui/Button'
 
 type Mode = 'loading' | 'unlock' | 'register' | 'reset-pin'
 
+// Single hidden input + 6 display boxes
+function PinInput({
+  value,
+  onChange,
+  onComplete,
+  error,
+  shaking,
+  autoFocus,
+}: {
+  value: string
+  onChange: (v: string) => void
+  onComplete?: (pin: string) => void
+  error?: boolean
+  shaking?: boolean
+  autoFocus?: boolean
+}) {
+  const hiddenRef = useRef<HTMLInputElement>(null)
+  const digits = value.split('').concat(Array(6).fill('')).slice(0, 6)
+
+  function handleChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const v = e.target.value.replace(/\D/g, '').slice(0, 6)
+    onChange(v)
+    if (v.length === 6 && onComplete) onComplete(v)
+  }
+
+  return (
+    <div
+      className={`flex justify-center gap-2 ${shaking ? 'animate-shake' : ''}`}
+      onClick={() => hiddenRef.current?.focus()}
+    >
+      <input
+        ref={hiddenRef}
+        type="tel"
+        inputMode="numeric"
+        autoComplete="one-time-code"
+        autoFocus={autoFocus}
+        value={value}
+        onChange={handleChange}
+        className="absolute opacity-0 w-0 h-0 pointer-events-none"
+        maxLength={6}
+      />
+      {digits.map((d, i) => (
+        <div
+          key={i}
+          className={[
+            'w-12 h-12 rounded-xl border-2 transition-all flex items-center justify-center text-xl font-bold text-white select-none',
+            error
+              ? 'border-red-500 bg-red-500/10'
+              : d
+              ? 'border-violet-500 bg-violet-500/10'
+              : i === value.length
+              ? 'border-violet-400/60 bg-white/[0.05]'
+              : 'border-white/[0.12] bg-white/[0.05]',
+          ].join(' ')}
+        >
+          {d ? '●' : ''}
+        </div>
+      ))}
+    </div>
+  )
+}
+
+function PinInputSmall({
+  value,
+  onChange,
+  onComplete,
+  autoFocus,
+  label,
+}: {
+  value: string
+  onChange: (v: string) => void
+  onComplete?: (pin: string) => void
+  autoFocus?: boolean
+  label: string
+}) {
+  const hiddenRef = useRef<HTMLInputElement>(null)
+  const digits = value.split('').concat(Array(6).fill('')).slice(0, 6)
+
+  function handleChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const v = e.target.value.replace(/\D/g, '').slice(0, 6)
+    onChange(v)
+    if (v.length === 6 && onComplete) onComplete(v)
+  }
+
+  return (
+    <div className="space-y-2">
+      <label className="block text-[11px] font-medium text-white/35 uppercase tracking-wider">{label}</label>
+      <div
+        className="flex justify-between gap-1.5"
+        onClick={() => hiddenRef.current?.focus()}
+      >
+        <input
+          ref={hiddenRef}
+          type="tel"
+          inputMode="numeric"
+          autoComplete="one-time-code"
+          autoFocus={autoFocus}
+          value={value}
+          onChange={handleChange}
+          className="absolute opacity-0 w-0 h-0 pointer-events-none"
+          maxLength={6}
+        />
+        {digits.map((d, i) => (
+          <div
+            key={i}
+            className={[
+              'w-10 h-10 rounded-lg border-2 transition-all flex items-center justify-center text-lg font-bold text-white select-none',
+              d
+                ? 'border-violet-500 bg-violet-500/10'
+                : i === value.length
+                ? 'border-violet-400/60 bg-white/[0.05]'
+                : 'border-white/[0.12] bg-white/[0.05]',
+            ].join(' ')}
+          >
+            {d ? '●' : ''}
+          </div>
+        ))}
+      </div>
+    </div>
+  )
+}
+
 export default function Login() {
   const navigate = useNavigate()
   const { setCurrentUser, currentUser, sessionReady } = useStore()
@@ -16,19 +138,15 @@ export default function Login() {
   const [mode, setMode] = useState<Mode>('loading')
   const [pinHash, setPinHash] = useState<string | null>(null)
 
-  // Registration
   const [name, setName] = useState('')
   const [email, setEmail] = useState('')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
 
-  // 6-digit PIN boxes (shared by unlock + register + reset)
-  const [digits, setDigits] = useState(['', '', '', '', '', ''])
-  const [confirmDigits, setConfirmDigits] = useState(['', '', '', '', '', ''])
+  const [pin, setPin] = useState('')
+  const [confirmPin, setConfirmPin] = useState('')
   const [pinError, setPinError] = useState(false)
   const [shaking, setShaking] = useState(false)
-  const inputsRef = useRef<(HTMLInputElement | null)[]>([])
-  const confirmRef = useRef<(HTMLInputElement | null)[]>([])
 
   useEffect(() => {
     if (!sessionReady) return
@@ -43,53 +161,8 @@ export default function Login() {
     }
   }, [sessionReady, currentUser])
 
-  useEffect(() => {
-    if (mode === 'unlock' || mode === 'reset-pin') {
-      setTimeout(() => inputsRef.current[0]?.focus(), 50)
-    }
-  }, [mode])
-
-  function focusFirstEmpty(
-    arr: string[],
-    refs: React.MutableRefObject<(HTMLInputElement | null)[]>,
-  ) {
-    const first = arr.findIndex(d => d === '')
-    refs.current[first === -1 ? 5 : first]?.focus()
-  }
-
-  function handlePinKeyDown(
-    idx: number,
-    e: React.KeyboardEvent<HTMLInputElement>,
-    arr: string[],
-    setArr: (v: string[]) => void,
-    refs: React.MutableRefObject<(HTMLInputElement | null)[]>,
-    onComplete?: (pin: string) => void,
-  ) {
-    if (e.key === 'Backspace') {
-      e.preventDefault()
-      if (arr[idx]) {
-        const next = [...arr]; next[idx] = ''; setArr(next)
-      } else if (idx > 0) {
-        const next = [...arr]; next[idx - 1] = ''; setArr(next)
-        refs.current[idx - 1]?.focus()
-      }
-      return
-    }
-    if (e.key >= '0' && e.key <= '9') {
-      e.preventDefault()
-      const next = [...arr]; next[idx] = e.key; setArr(next)
-      setPinError(false)
-      if (idx < 5) {
-        refs.current[idx + 1]?.focus()
-      } else if (onComplete) {
-        const pin = [...next].join('')
-        if (next.every(d => d !== '')) onComplete(pin)
-      }
-    }
-  }
-
-  async function handleUnlock(pin: string) {
-    const ok = await verifyPin(pin, pinHash!)
+  async function handleUnlock(p: string) {
+    const ok = await verifyPin(p, pinHash!)
     if (ok) {
       sessionStorage.setItem('planner_unlocked', '1')
       navigate('/ui', { replace: true })
@@ -97,9 +170,9 @@ export default function Login() {
       setShaking(true)
       setPinError(true)
       setTimeout(() => {
-        setDigits(['', '', '', '', '', ''])
+        setPin('')
         setShaking(false)
-        inputsRef.current[0]?.focus()
+        setPinError(false)
       }, 600)
     }
   }
@@ -107,10 +180,8 @@ export default function Login() {
   async function handleRegister(e: React.FormEvent) {
     e.preventDefault()
     if (!name.trim() || !email.trim()) { setError('Name and email are required'); return }
-    const pin = digits.join('')
-    const confirm = confirmDigits.join('')
     if (pin.length !== 6) { setError('Enter all 6 PIN digits'); return }
-    if (pin !== confirm) { setError('PINs do not match'); return }
+    if (pin !== confirmPin) { setError('PINs do not match'); return }
     setLoading(true); setError('')
     try {
       const h = await hashPin(pin)
@@ -128,10 +199,8 @@ export default function Login() {
 
   async function handleResetPin(e: React.FormEvent) {
     e.preventDefault()
-    const pin = digits.join('')
-    const confirm = confirmDigits.join('')
     if (pin.length !== 6) { setError('Enter all 6 PIN digits'); return }
-    if (pin !== confirm) { setError('PINs do not match'); return }
+    if (pin !== confirmPin) { setError('PINs do not match'); return }
     setLoading(true); setError('')
     try {
       const h = await hashPin(pin)
@@ -165,7 +234,7 @@ export default function Login() {
 
   if (mode === 'loading') return shell(null)
 
-  // ── Returning user: 6-digit unlock ──────────────────────
+  // ── Returning user: unlock ───────────────────────────────
   if (mode === 'unlock') return shell(
     <>
       <div className="mb-8 text-center">
@@ -178,26 +247,14 @@ export default function Login() {
         <p className="text-[13px] text-white/40 mt-1.5">Enter your 6-digit PIN to continue</p>
       </div>
 
-      <div className={`flex justify-center gap-2 ${shaking ? 'animate-shake' : ''}`} data-1p-ignore data-lpignore="true">
-        {digits.map((d, i) => (
-          <input
-            key={i}
-            ref={el => { inputsRef.current[i] = el }}
-            type="password"
-            inputMode="numeric"
-            autoComplete="off"
-            maxLength={1}
-            value={d}
-            onChange={() => {}}
-            onClick={() => focusFirstEmpty(digits, inputsRef)}
-            onKeyDown={e => handlePinKeyDown(i, e, digits, setDigits, inputsRef, handleUnlock)}
-            className={[
-              'w-12 h-12 text-center text-xl font-bold rounded-xl border-2 transition-all outline-none bg-white/[0.05] text-white caret-transparent',
-              pinError ? 'border-red-500 bg-red-500/10' : d ? 'border-violet-500 bg-violet-500/10' : 'border-white/[0.12] focus:border-violet-400/50',
-            ].join(' ')}
-          />
-        ))}
-      </div>
+      <PinInput
+        value={pin}
+        onChange={setPin}
+        onComplete={handleUnlock}
+        error={pinError}
+        shaking={shaking}
+        autoFocus
+      />
 
       {pinError && <p className="text-center text-xs text-red-400 mt-3">Incorrect PIN — try again</p>}
 
@@ -207,42 +264,7 @@ export default function Login() {
     </>
   )
 
-  // ── PIN boxes row component ──────────────────────────────
-  const PinRow = ({
-    label, arr, setArr, refs, onComplete,
-  }: {
-    label: string
-    arr: string[]
-    setArr: (v: string[]) => void
-    refs: React.MutableRefObject<(HTMLInputElement | null)[]>
-    onComplete?: (pin: string) => void
-  }) => (
-    <div className="space-y-2">
-      <label className="block text-[11px] font-medium text-white/35 uppercase tracking-wider">{label}</label>
-      <div className="flex justify-between gap-1.5" data-1p-ignore data-lpignore="true">
-        {arr.map((d, i) => (
-          <input
-            key={i}
-            ref={el => { refs.current[i] = el }}
-            type="password"
-            inputMode="numeric"
-            autoComplete="off"
-            maxLength={1}
-            value={d}
-            onChange={() => {}}
-            onClick={() => focusFirstEmpty(arr, refs)}
-            onKeyDown={e => handlePinKeyDown(i, e, arr, setArr, refs, onComplete)}
-            className={[
-              'w-10 h-10 text-center text-lg font-bold rounded-lg border-2 transition-all outline-none bg-white/[0.05] text-white caret-transparent',
-              d ? 'border-violet-500 bg-violet-500/10' : 'border-white/[0.12] focus:border-violet-400/50',
-            ].join(' ')}
-          />
-        ))}
-      </div>
-    </div>
-  )
-
-  // ── New user: single form (identity + PIN) ───────────────
+  // ── New user: register ───────────────────────────────────
   if (mode === 'register') return shell(
     <>
       <div className="mb-8 text-center">
@@ -266,9 +288,9 @@ export default function Login() {
         </div>
 
         <div className="border-t border-white/[0.06] pt-4 space-y-4">
-          <PinRow label="PIN (6 digits)" arr={digits} setArr={setDigits} refs={inputsRef}
-            onComplete={() => confirmRef.current[0]?.focus()} />
-          <PinRow label="Confirm PIN" arr={confirmDigits} setArr={setConfirmDigits} refs={confirmRef} />
+          <PinInputSmall label="PIN (6 digits)" value={pin} onChange={setPin}
+            onComplete={() => {}} />
+          <PinInputSmall label="Confirm PIN" value={confirmPin} onChange={setConfirmPin} />
         </div>
 
         {error && <p className="text-red-400 text-[12px]">{error}</p>}
@@ -295,9 +317,9 @@ export default function Login() {
         </p>
       </div>
       <form onSubmit={handleResetPin} className="bg-[#111113] border border-white/[0.08] rounded-2xl p-6 shadow-2xl shadow-black/60 space-y-4">
-        <PinRow label="New PIN (6 digits)" arr={digits} setArr={setDigits} refs={inputsRef}
-          onComplete={() => confirmRef.current[0]?.focus()} />
-        <PinRow label="Confirm PIN" arr={confirmDigits} setArr={setConfirmDigits} refs={confirmRef} />
+        <PinInputSmall label="New PIN (6 digits)" value={pin} onChange={setPin}
+          onComplete={() => {}} autoFocus />
+        <PinInputSmall label="Confirm PIN" value={confirmPin} onChange={setConfirmPin} />
         {error && <p className="text-red-400 text-[12px]">{error}</p>}
         <Button type="submit" disabled={loading} className="w-full gap-2 mt-1">
           {loading ? 'Saving…' : 'Set PIN'} {!loading && <ArrowRight size={14} />}

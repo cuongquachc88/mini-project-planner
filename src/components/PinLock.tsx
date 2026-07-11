@@ -1,5 +1,5 @@
-import { useState, useEffect, useRef } from 'react'
-import { Lock, Eye, EyeOff, ShieldCheck } from 'lucide-react'
+import { useState, useRef } from 'react'
+import { Lock, ShieldCheck } from 'lucide-react'
 import { verifyPin } from '@/lib/utils/pin'
 
 interface Props {
@@ -9,46 +9,30 @@ interface Props {
 }
 
 export function PinLock({ pinHash, onUnlock, userName }: Props) {
-  const [digits, setDigits] = useState(['', '', '', '', '', ''])
+  const [pin, setPin] = useState('')
   const [error, setError] = useState(false)
-  const [show, setShow] = useState(false)
   const [shaking, setShaking] = useState(false)
-  const inputsRef = useRef<(HTMLInputElement | null)[]>([])
+  const hiddenRef = useRef<HTMLInputElement>(null)
 
-  useEffect(() => {
-    inputsRef.current[0]?.focus()
-  }, [])
+  const digits = pin.split('').concat(Array(6).fill('')).slice(0, 6)
 
-  async function handleKeyDown(idx: number, e: React.KeyboardEvent<HTMLInputElement>) {
-    if (e.key === 'Backspace') {
-      e.preventDefault()
-      if (digits[idx]) {
-        const next = [...digits]; next[idx] = ''; setDigits(next)
-      } else if (idx > 0) {
-        const next = [...digits]; next[idx - 1] = ''; setDigits(next)
-        inputsRef.current[idx - 1]?.focus()
-      }
-      return
-    }
-    if (e.key >= '0' && e.key <= '9') {
-      e.preventDefault()
-      const next = [...digits]; next[idx] = e.key; setDigits(next)
-      setError(false)
-      if (idx < 5) {
-        inputsRef.current[idx + 1]?.focus()
-      } else if (next.every(d => d !== '')) {
-        const ok = await verifyPin(next.join(''), pinHash)
-        if (ok) {
-          onUnlock()
-        } else {
-          setShaking(true)
-          setError(true)
-          setTimeout(() => {
-            setDigits(['', '', '', '', '', ''])
-            setShaking(false)
-            inputsRef.current[0]?.focus()
-          }, 600)
-        }
+  async function handleChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const v = e.target.value.replace(/\D/g, '').slice(0, 6)
+    setPin(v)
+    setError(false)
+    if (v.length === 6) {
+      const ok = await verifyPin(v, pinHash)
+      if (ok) {
+        onUnlock()
+      } else {
+        setShaking(true)
+        setError(true)
+        setTimeout(() => {
+          setPin('')
+          setShaking(false)
+          setError(false)
+          hiddenRef.current?.focus()
+        }, 600)
       }
     }
   }
@@ -65,45 +49,43 @@ export function PinLock({ pinHash, onUnlock, userName }: Props) {
         </h1>
         <p className="text-[13px] text-white/35 mb-8">Enter your PIN to unlock</p>
 
-        <div className={cn('flex justify-center gap-3 mb-3', shaking && 'animate-shake')}>
+        <div
+          className={`flex justify-center gap-3 mb-3 cursor-text ${shaking ? 'animate-shake' : ''}`}
+          onClick={() => hiddenRef.current?.focus()}
+        >
+          <input
+            ref={hiddenRef}
+            type="tel"
+            inputMode="numeric"
+            autoComplete="one-time-code"
+            autoFocus
+            value={pin}
+            onChange={handleChange}
+            className="absolute opacity-0 w-0 h-0 pointer-events-none"
+            maxLength={6}
+          />
           {digits.map((d, i) => (
-            <input
+            <div
               key={i}
-              ref={(el) => { inputsRef.current[i] = el }}
-              type={show ? 'text' : 'password'}
-              inputMode="numeric"
-              maxLength={1}
-              value={d}
-              onChange={() => {}}
-              onClick={() => {
-                const first = digits.findIndex(d => d === '')
-                inputsRef.current[first === -1 ? 5 : first]?.focus()
-              }}
-              onKeyDown={(e) => handleKeyDown(i, e)}
-              className={cn(
-                'w-14 h-14 text-center text-xl font-bold rounded-xl border-2 transition-all outline-none',
-                'bg-white/[0.05] text-white caret-transparent',
+              className={[
+                'w-14 h-14 rounded-xl border-2 transition-all flex items-center justify-center text-2xl font-bold text-white select-none',
                 error
                   ? 'border-red-500 bg-red-500/10'
                   : d
                   ? 'border-violet-500 bg-violet-500/10'
-                  : 'border-white/[0.12] focus:border-violet-400/50',
-              )}
-            />
+                  : i === pin.length
+                  ? 'border-violet-400/60 bg-white/[0.05]'
+                  : 'border-white/[0.12] bg-white/[0.05]',
+              ].join(' ')}
+            >
+              {d ? '●' : ''}
+            </div>
           ))}
         </div>
 
         {error && (
           <p className="text-xs text-red-400 mb-3">Incorrect PIN — try again</p>
         )}
-
-        <button
-          onClick={() => setShow(!show)}
-          className="flex items-center gap-1.5 text-xs text-white/30 hover:text-white/60 transition-colors mx-auto"
-        >
-          {show ? <EyeOff size={12} /> : <Eye size={12} />}
-          {show ? 'Hide' : 'Show'} PIN
-        </button>
 
         <p className="text-[11px] text-white/[0.15] mt-8 flex items-center justify-center gap-1">
           <ShieldCheck size={11} />
@@ -112,8 +94,4 @@ export function PinLock({ pinHash, onUnlock, userName }: Props) {
       </div>
     </div>
   )
-}
-
-function cn(...classes: (string | boolean | undefined)[]) {
-  return classes.filter(Boolean).join(' ')
 }
