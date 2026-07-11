@@ -21,7 +21,10 @@ export async function findFile(name: string): Promise<DriveFile | null> {
     q: `name = '${name}'`,
   })
   const resp = await fetch(`${BASE}/drive/v3/files?${params}`, { headers: authHeader() })
-  if (!resp.ok) throw new Error(`Drive list failed: ${resp.statusText}`)
+  if (!resp.ok) {
+    const body = await resp.json().catch(() => ({})) as { error?: { message?: string } }
+    throw new Error(`Drive list failed (${resp.status}): ${body?.error?.message ?? resp.statusText}`)
+  }
   const json = await resp.json() as { files: DriveFile[] }
   return json.files[0] ?? null
 }
@@ -46,13 +49,19 @@ export async function uploadFile(content: string, name: string, existingFileId?:
     body: form,
   })
 
-  if (!resp.ok) throw new Error(`Drive upload failed: ${resp.statusText}`)
+  if (!resp.ok) {
+    const body = await resp.json().catch(() => ({})) as { error?: { message?: string } }
+    throw new Error(`Drive upload failed (${resp.status}): ${body?.error?.message ?? resp.statusText}`)
+  }
   return resp.json() as Promise<DriveFile>
 }
 
 export async function downloadFile(fileId: string): Promise<string> {
   const resp = await fetch(`${BASE}/drive/v3/files/${fileId}?alt=media`, { headers: authHeader() })
-  if (!resp.ok) throw new Error(`Drive download failed: ${resp.statusText}`)
+  if (!resp.ok) {
+    const body = await resp.json().catch(() => ({})) as { error?: { message?: string } }
+    throw new Error(`Drive download failed (${resp.status}): ${body?.error?.message ?? resp.statusText}`)
+  }
   return resp.text()
 }
 

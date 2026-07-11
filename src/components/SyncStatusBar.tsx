@@ -6,7 +6,7 @@ import { fmtRelative } from '@/lib/utils/dates'
 import { cn } from '@/lib/utils/cn'
 
 export function SyncStatusBar() {
-  const { isDriveConnected, syncStatus, lastSyncedAt } = useStore()
+  const { isDriveConnected, syncStatus, lastSyncedAt, syncError } = useStore()
   const { sync, restore, connect, disconnect, isConfigured } = useGoogleDrive()
   const [restoring, setRestoring] = useState(false)
 
@@ -31,9 +31,10 @@ export function SyncStatusBar() {
           {syncStatus === 'error'    && <AlertCircle size={12} className="text-red-400" />}
           {syncStatus === 'idle'     && <Cloud size={12} className="text-emerald-400/70" />}
 
-          <span className={cn('text-white/30', syncStatus === 'error' && 'text-red-400')}>
+          <span className={cn('text-white/30 max-w-[200px] truncate', syncStatus === 'error' && 'text-red-400')}
+            title={syncStatus === 'error' ? (syncError ?? 'Sync failed') : undefined}>
             {syncStatus === 'syncing'  ? 'Syncing…'
-             : syncStatus === 'error'  ? 'Sync failed'
+             : syncStatus === 'error'  ? (syncError ?? 'Sync failed')
              : lastSyncedAt           ? `Synced ${fmtRelative(lastSyncedAt)}`
              : 'Connected'}
           </span>
