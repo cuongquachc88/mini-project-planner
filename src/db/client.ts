@@ -69,8 +69,8 @@ export async function mergeAndApplySnapshot(remote: DbSnapshot): Promise<void> {
       if (!existing) {
         merged.set(id, row)
       } else {
-        const localTs = existing.updated_at ? new Date(existing.updated_at as string).getTime() : 0
-        const remoteTs = row.updated_at ? new Date(row.updated_at as string).getTime() : 0
+        const localTs = existing.updated_at ? new Date(existing.updated_at as string | Date).getTime() : 0
+        const remoteTs = row.updated_at ? new Date(row.updated_at as string | Date).getTime() : 0
         if (remoteTs > localTs) merged.set(id, row)
       }
     }
@@ -96,8 +96,10 @@ export async function mergeAndApplySnapshot(remote: DbSnapshot): Promise<void> {
         if (v === null || v === undefined) return 'NULL'
         if (typeof v === 'boolean') return v ? 'TRUE' : 'FALSE'
         if (typeof v === 'number') return String(v)
+        // PGlite returns TIMESTAMPTZ as JS Date objects — convert to UTC ISO string
+        if (v instanceof Date) return `'${v.toISOString()}'`
         const s = String(v)
-        // Normalize timestamps to UTC ISO so PGlite always gets a recognized format
+        // Also handle timestamp strings with non-standard timezone offsets
         if (/^\d{4}-\d{2}-\d{2}[T ]\d{2}:\d{2}/.test(s)) {
           const d = new Date(s)
           if (!isNaN(d.getTime())) return `'${d.toISOString()}'`
