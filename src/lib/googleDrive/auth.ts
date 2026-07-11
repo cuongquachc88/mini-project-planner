@@ -28,75 +28,41 @@ export function storeToken(token: TokenData): void {
 
 export function clearToken(): void {
   localStorage.removeItem('drive_token')
-  localStorage.removeItem('drive_code_verifier')
 }
 
 export function isConfigured(): boolean {
   return Boolean(CLIENT_ID)
 }
 
-// Generate PKCE code verifier + challenge
-async function generatePKCE(): Promise<{ verifier: string; challenge: string }> {
-  const array = new Uint8Array(32)
-  crypto.getRandomValues(array)
-  const verifier = btoa(String.fromCharCode(...array))
-    .replace(/\+/g, '-').replace(/\//g, '_').replace(/=/g, '')
-
-  const encoder = new TextEncoder()
-  const data = encoder.encode(verifier)
-  const digest = await crypto.subtle.digest('SHA-256', data)
-  const challenge = btoa(String.fromCharCode(...new Uint8Array(digest)))
-    .replace(/\+/g, '-').replace(/\//g, '_').replace(/=/g, '')
-
-  return { verifier, challenge }
-}
-
 export async function initiateOAuthFlow(): Promise<void> {
   if (!CLIENT_ID) throw new Error('VITE_GOOGLE_CLIENT_ID not set')
 
-  const { verifier, challenge } = await generatePKCE()
-  localStorage.setItem('drive_code_verifier', verifier)
-  // Remember where to return after OAuth completes
   localStorage.setItem('drive_oauth_return', window.location.pathname)
 
+  // Implicit flow — token returned in URL fragment, no secret needed for PWA
   const params = new URLSearchParams({
     client_id: CLIENT_ID,
     redirect_uri: REDIRECT_URI,
-    response_type: 'code',
+    response_type: 'token',
     scope: SCOPE,
-    code_challenge: challenge,
-    code_challenge_method: 'S256',
-    access_type: 'offline',
     prompt: 'consent',
   })
 
-  // Redirect in same tab — COOP/COEP headers break window.opener so popup messaging is unreliable
   window.location.href = `https://accounts.google.com/o/oauth2/v2/auth?${params}`
 }
 
-export async function handleOAuthCallback(code: string): Promise<void> {
-  if (!CLIENT_ID) throw new Error('VITE_GOOGLE_CLIENT_ID not set')
+// Called from OAuthCallback — parse token from URL hash fragment
+export function handleOAuthCallback(): void {
+  const hash = new URLSearchParams(window.location.hash.slice(1))
+  const access_token = hash.get('access_token')
+  const expires_in = hash.get('expires_in')
+  const error = hash.get('error')
 
-  const verifier = localStorage.getItem('drive_code_verifier')
-  if (!verifier) throw new Error('No PKCE verifier found')
+  if (error) throw new Error(`Google OAuth error: ${error}`)
+  if (!access_token) throw new Error('No access token in callback')
 
-  const resp = await fetch('https://oauth2.googleapis.com/token', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-    body: new URLSearchParams({
-      client_id: CLIENT_ID,
-      code,
-      code_verifier: verifier,
-      grant_type: 'authorization_code',
-      redirect_uri: REDIRECT_URI,
-    }),
-  })
-
-  const json = await resp.json() as { access_token: string; expires_in: number; error?: string; error_description?: string }
-  if (!resp.ok) throw new Error(`Token exchange failed: ${json.error} — ${json.error_description}`)
   storeToken({
-    access_token: json.access_token,
-    expires_at: Date.now() + json.expires_in * 1000,
+    access_token,
+    expires_at: Date.now() + Number(expires_in ?? 3600) * 1000,
   })
-  localStorage.removeItem('drive_code_verifier')
 }

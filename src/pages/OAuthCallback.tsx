@@ -1,40 +1,22 @@
 import { useEffect, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
 import { handleOAuthCallback } from '@/lib/googleDrive/auth'
 import { useStore } from '@/store'
 
 export default function OAuthCallback() {
-  const navigate = useNavigate()
   const { setDriveConnected } = useStore()
   const [error, setError] = useState('')
 
   useEffect(() => {
-    const params = new URLSearchParams(window.location.search)
-    const code = params.get('code')
-    const err = params.get('error')
-
-    if (err) {
-      setError(`Google OAuth error: ${err}`)
-      return
+    try {
+      handleOAuthCallback()
+      setDriveConnected(true)
+      const returnTo = localStorage.getItem('drive_oauth_return') || '/profile'
+      localStorage.removeItem('drive_oauth_return')
+      window.location.replace(returnTo)
+    } catch (e) {
+      setError(e instanceof Error ? e.message : String(e))
     }
-
-    if (!code) {
-      setError('No authorization code received')
-      return
-    }
-
-    handleOAuthCallback(code)
-      .then(() => {
-        setDriveConnected(true)
-        const returnTo = localStorage.getItem('drive_oauth_return') || '/profile'
-        localStorage.removeItem('drive_oauth_return')
-        // Force full reload so app boots fresh with token already in localStorage
-        window.location.replace(returnTo)
-      })
-      .catch((e: Error) => {
-        setError(e.message)
-      })
-  }, [navigate, setDriveConnected])
+  }, [setDriveConnected])
 
   if (error) {
     return (
@@ -42,7 +24,8 @@ export default function OAuthCallback() {
         <div className="bg-[#141416] border border-white/[0.07] rounded-2xl p-6 max-w-sm w-full text-center space-y-3">
           <p className="text-red-400 font-medium">Drive connection failed</p>
           <p className="text-sm text-white/40">{error}</p>
-          <button onClick={() => navigate('/profile')} className="text-sm text-white/40 hover:text-white/70 transition-colors">Go back</button>
+          <button onClick={() => window.location.replace('/profile')}
+            className="text-sm text-white/40 hover:text-white/70 transition-colors">Go back</button>
         </div>
       </div>
     )
